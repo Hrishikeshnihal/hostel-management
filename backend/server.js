@@ -867,19 +867,22 @@ app.get('/notices', authenticateToken, async (req, res) => {
         let ownerId = null;
 
         if (req.user.role && req.user.role.toLowerCase() === 'student') {
-            ownerId = req.user.owner_id;
+            // 1. Check room allocation to see which hostel owner allocated them a room
+            const allocRes = await pool.query(
+                `SELECT r.owner_id FROM allocations a 
+                 JOIN rooms r ON a.room_id = r.id 
+                 WHERE a.student_id = $1 
+                 ORDER BY a.assigned_at DESC LIMIT 1`,
+                [req.user.id]
+            );
 
-            // If not directly set on user, check room allocation
-            if (!ownerId) {
-                const allocRes = await pool.query(
-                    `SELECT r.owner_id FROM allocations a 
-                     JOIN rooms r ON a.room_id = r.id 
-                     WHERE a.student_id = $1 
-                     ORDER BY a.assigned_at DESC LIMIT 1`,
-                    [req.user.id]
-                );
-                if (allocRes.rows.length > 0 && allocRes.rows[0].owner_id) {
-                    ownerId = allocRes.rows[0].owner_id;
+            if (allocRes.rows.length > 0 && allocRes.rows[0].owner_id) {
+                ownerId = allocRes.rows[0].owner_id;
+            } else {
+                // 2. Fallback to direct DB user lookup
+                const userRes = await pool.query(`SELECT owner_id FROM users WHERE id = $1`, [req.user.id]);
+                if (userRes.rows.length > 0 && userRes.rows[0].owner_id) {
+                    ownerId = userRes.rows[0].owner_id;
                 }
             }
 
@@ -916,13 +919,14 @@ app.post('/admin/notices', authenticateToken, async (req, res) => {
     }
 
     const { title, content } = req.body;
+    const ownerId = req.user.owner_id || req.user.id;
 
     try {
         const newNotice = await pool.query(
             `INSERT INTO notices (title, content, owner_id) 
              VALUES ($1, $2, $3) 
              RETURNING *`,
-            [title, content, req.user.id]
+            [title, content, ownerId]
         );
         res.status(201).json({ message: 'Notice posted', notice: newNotice.rows[0] });
     } catch (err) {
