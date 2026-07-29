@@ -524,14 +524,17 @@ app.get('/my-room', authenticateToken, async (req, res) => {
     }
 });
 
-// GET: Fetch student profile details
 app.get('/profile', authenticateToken, async (req, res) => {
     try {
+        const ownerId = req.user.owner_id || req.user.id;
         const userQuery = await pool.query(
-            `SELECT id, id as student_id, full_name as name, email, role, TO_CHAR(created_at, 'DD Mon YYYY') as joined_date 
-             FROM users 
-             WHERE id = $1`,
-            [req.user.id]
+            `SELECT u.id, u.id as student_id, u.full_name as name, u.email, u.role, 
+                    TO_CHAR(u.created_at, 'DD Mon YYYY') as joined_date,
+                    hs.setting_value as hostel_name
+             FROM users u
+             LEFT JOIN hostel_settings hs ON hs.owner_id = $2 AND hs.setting_key = 'hostel_name'
+             WHERE u.id = $1`,
+            [req.user.id, ownerId]
         );
 
         if (userQuery.rows.length === 0) {

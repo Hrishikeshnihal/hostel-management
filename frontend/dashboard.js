@@ -270,6 +270,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (res.ok) {
                 const data = await res.json();
                 
+                if (data.hostel_name) {
+                    document.querySelectorAll('.brand-name').forEach(el => el.textContent = data.hostel_name);
+                }
+
                 // Split the name to put First Name on top, Last Name on bottom
                 const nameParts = (data.name || '').split(' ');
                 const firstName = nameParts[0] || '';

@@ -558,6 +558,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const settings = await res.json();
                 document.getElementById('configHostelName').value = settings.hostel_name || '';
                 document.getElementById('configDefaultRent').value = settings.default_rent || '';
+                if (settings.hostel_name) {
+                    document.querySelectorAll('.brand-name').forEach(el => el.textContent = settings.hostel_name);
+                }
             }
         } catch (err) {
             console.error("Failed to load settings:", err);
@@ -585,6 +588,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (res.ok) {
                 msgBox.innerHTML = `<span style="color: #00ffaa; font-weight: bold;">✓ Settings updated globally</span>`;
+                if (hostel_name) {
+                    document.querySelectorAll('.brand-name').forEach(el => el.textContent = hostel_name);
+                }
                 setTimeout(() => { msgBox.innerHTML = ''; }, 3000);
             } else {
                 msgBox.innerHTML = `<span style="color: #ef4444; font-weight: bold;">✗ Failed to update settings</span>`;
