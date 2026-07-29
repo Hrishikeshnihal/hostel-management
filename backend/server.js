@@ -31,8 +31,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // 3. Configure the Database Connection
+const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    max: isServerless ? 2 : 10, // Limit connections per lambda to prevent Supabase max clients (15) overflow
+    idleTimeoutMillis: 10000,   // Close idle connections fast in serverless lambdas
+    connectionTimeoutMillis: 10000, // Timeout fast instead of hanging requests
     ssl: process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('neon') || process.env.DATABASE_URL.includes('render'))
         ? { rejectUnauthorized: false }
         : false
