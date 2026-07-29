@@ -213,10 +213,17 @@ app.post('/auth/firebase', async (req, res) => {
             );
             user = newUser.rows[0];
 
-            // For a new Admin, set owner_id to their own id
+            // For a new Admin, set owner_id to their own id & create default hostel settings
             if (dbRole === 'Admin') {
                 await pool.query('UPDATE users SET owner_id = $1 WHERE id = $1', [user.id]);
                 user.owner_id = user.id;
+
+                await pool.query(
+                    `INSERT INTO hostel_settings (setting_key, setting_value, owner_id)
+                     VALUES ('hostel_name', $1, $2), ('default_rent', '5000', $2)
+                     ON CONFLICT DO NOTHING`,
+                    [`${firebaseName}'s Hostel`, user.id]
+                );
             }
         }
 
@@ -390,9 +397,8 @@ app.get('/unpaid-dues', authenticateToken, authorizeRoles('Accountant', 'Admin')
             JOIN rooms r ON a.room_id = r.id
             -- LEFT JOIN ensures we keep the student even if they have 0 payments
             LEFT JOIN payments p ON p.student_id = u.id AND p.payment_month = $1 AND p.status = 'completed'
-            WHERE (u.owner_id = $2 OR u.owner_id IS NULL)
+            WHERE u.owner_id = $2 AND LOWER(u.role) = 'student'
             GROUP BY u.id, u.full_name, u.email, r.room_number, r.price_per_month
-            -- HAVING filters the final results to only show people who still owe money
             HAVING (r.price_per_month - COALESCE(SUM(p.amount), 0)) > 0
             ORDER BY r.room_number ASC;
         `;
@@ -587,7 +593,7 @@ app.get('/admin/complaints', authenticateToken, async (req, res) => {
              JOIN users u ON c.student_id = u.id
              LEFT JOIN allocations a ON u.id = a.student_id
              LEFT JOIN rooms r ON a.room_id = r.id
-             WHERE (u.owner_id = $1 OR u.owner_id IS NULL OR u.id = $1)
+             WHERE u.owner_id = $1 AND LOWER(u.role) = 'student'
              ORDER BY 
                 CASE WHEN c.status = 'Pending' THEN 1 ELSE 2 END,
                 c.created_at DESC`,
@@ -712,7 +718,7 @@ app.get('/admin/payments', authenticateToken, async (req, res) => {
                     TO_CHAR(p.due_date, 'DD Mon YYYY') as due_date
              FROM payments p
              JOIN users u ON p.student_id = u.id
-             WHERE (u.owner_id = $1 OR u.owner_id IS NULL OR u.id = $1)
+             WHERE u.owner_id = $1 AND LOWER(u.role) = 'student'
              ORDER BY p.due_date DESC`,
             [ownerId]
         );
@@ -777,10 +783,10 @@ app.get('/admin/stats', authenticateToken, async (req, res) => {
     try {
         const ownerId = req.user.owner_id || req.user.id;
         const [studentCount, roomCount, pendingDues, complaintCount] = await Promise.all([
-            pool.query("SELECT COUNT(*) AS total FROM users WHERE (LOWER(role) = 'student' OR id = $1) AND (owner_id = $1 OR owner_id IS NULL OR id = $1)", [ownerId]),
-            pool.query("SELECT COUNT(DISTINCT room_number) AS total FROM users WHERE (LOWER(role) = 'student' OR id = $1) AND room_number IS NOT NULL AND (owner_id = $1 OR owner_id IS NULL OR id = $1)", [ownerId]),
-            pool.query("SELECT COALESCE(SUM(amount), 0) AS total FROM payments p JOIN users u ON p.student_id = u.id WHERE LOWER(p.status) = 'pending' AND (u.owner_id = $1 OR u.owner_id IS NULL OR u.id = $1)", [ownerId]),
-            pool.query("SELECT COUNT(*) AS total FROM complaints c JOIN users u ON c.student_id = u.id WHERE LOWER(c.status) != 'resolved' AND (u.owner_id = $1 OR u.owner_id IS NULL OR u.id = $1)", [ownerId])
+            pool.query("SELECT COUNT(*) AS total FROM users WHERE LOWER(role) = 'student' AND owner_id = $1", [ownerId]),
+            pool.query("SELECT COUNT(DISTINCT room_number) AS total FROM users WHERE LOWER(role) = 'student' AND room_number IS NOT NULL AND owner_id = $1", [ownerId]),
+            pool.query("SELECT COALESCE(SUM(amount), 0) AS total FROM payments p JOIN users u ON p.student_id = u.id WHERE LOWER(p.status) = 'pending' AND u.owner_id = $1 AND LOWER(u.role) = 'student'", [ownerId]),
+            pool.query("SELECT COUNT(*) AS total FROM complaints c JOIN users u ON c.student_id = u.id WHERE LOWER(c.status) != 'resolved' AND u.owner_id = $1 AND LOWER(u.role) = 'student'", [ownerId])
         ]);
 
         res.json({
@@ -990,7 +996,7 @@ app.get('/admin/leave', authenticateToken, async (req, res) => {
     if (req.user.role.toLowerCase() !== 'admin' && req.user.role.toLowerCase() !== 'warden') return res.status(403).send('Access denied');
     try {
         const ownerId = req.user.owner_id || req.user.id;
-        const result = await pool.query(`SELECT l.*, u.full_name as name, u.room_number FROM leave_requests l JOIN users u ON l.student_id = u.id WHERE l.status = 'Pending' AND (u.owner_id = $1 OR u.owner_id IS NULL OR u.id = $1) ORDER BY l.created_at ASC`, [ownerId]);
+        const result = await pool.query(`SELECT l.*, u.full_name as name, u.room_number FROM leave_requests l JOIN users u ON l.student_id = u.id WHERE l.status = 'Pending' AND u.owner_id = $1 AND LOWER(u.role) = 'student' ORDER BY l.created_at ASC`, [ownerId]);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
