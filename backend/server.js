@@ -574,7 +574,8 @@ app.post('/admin/allocate', authenticateToken, async (req, res) => {
         await pool.query("UPDATE users SET room_number = $1 WHERE id = $2", [room_number, student_id]);
         
         // 4. Update the room status to occupied (per user request)
-        await pool.query("UPDATE rooms SET status = 'Occupied' WHERE room_number = $1", [room_number, req.user.id]);
+        const ownerId = req.user.owner_id || req.user.id;
+        await pool.query("UPDATE rooms SET status = 'Occupied' WHERE room_number = $1 AND owner_id = $2", [room_number, ownerId]);
         
         res.status(201).json({ message: 'Room allocated successfully', allocation: newAllocation.rows[0] });
     } catch (err) {
