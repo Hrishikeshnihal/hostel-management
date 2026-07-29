@@ -687,11 +687,12 @@ app.post('/admin/allocate', authenticateToken, async (req, res) => {
             [student_id, actualRoomId]
         );
         
-        // 3. Update the user's room assignment (per user request)
-        await pool.query("UPDATE users SET room_number = $1 WHERE id = $2", [room_number, student_id]);
-        
-        // 4. Update the room status to occupied (per user request)
         const ownerId = req.user.owner_id || req.user.id;
+
+        // 3. Update the user's room assignment & owner_id
+        await pool.query("UPDATE users SET room_number = $1, owner_id = $2 WHERE id = $3", [room_number, ownerId, student_id]);
+        
+        // 4. Update the room status to occupied
         await pool.query("UPDATE rooms SET status = 'Occupied' WHERE room_number = $1 AND owner_id = $2", [room_number, ownerId]);
         
         res.status(201).json({ message: 'Room allocated successfully', allocation: newAllocation.rows[0] });
@@ -869,7 +870,22 @@ app.put('/student/payments/:id/pay', authenticateToken, async (req, res) => {
 // GET: Fetch all notices (Viewable by Students and Admins)
 app.get('/notices', authenticateToken, async (req, res) => {
     try {
-        const ownerId = req.user.role.toLowerCase() === 'student' ? req.user.owner_id : (req.user.owner_id || req.user.id);
+        let ownerId = req.user.owner_id || req.user.id;
+
+        // If student, check if their assigned room links to an owner
+        if (req.user.role && req.user.role.toLowerCase() === 'student') {
+            const allocRes = await pool.query(
+                `SELECT r.owner_id FROM allocations a 
+                 JOIN rooms r ON a.room_id = r.id 
+                 WHERE a.student_id = $1 
+                 ORDER BY a.assigned_at DESC LIMIT 1`,
+                [req.user.id]
+            );
+            if (allocRes.rows.length > 0) {
+                ownerId = allocRes.rows[0].owner_id;
+            }
+        }
+
         const noticesQuery = await pool.query(
             `SELECT id, title, content, posted_by, 
                     TO_CHAR(created_at, 'DD Mon YYYY, HH:MI AM') as date

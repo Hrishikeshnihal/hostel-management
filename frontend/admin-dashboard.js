@@ -655,73 +655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     fetchPendingLeaves();
 
-    // Student Onboarding Logic
-    async function fetchAvailableRoomsForOnboarding() {
-        window.fetchAvailableRoomsForOnboarding = fetchAvailableRoomsForOnboarding;
-        const select = document.getElementById('onboardRoom');
-        if (!select) return;
-        try {
-            const res = await fetch('/rooms', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const rooms = await res.json();
-                const availableRooms = rooms.filter(r => r.status === 'Available');
-                select.innerHTML = '<option value="" style="background: var(--surface);">None - Assign Later</option>' +
-                    availableRooms.map(r => `<option value="${r.room_number}" style="background: var(--surface);">${r.room_number} (Rent: ₹${r.price_per_month})</option>`).join('');
-            }
-        } catch (err) {
-            console.error('Error fetching rooms for onboarding select:', err);
-        }
-    };
 
-    const onboardingForm = document.getElementById('onboardingForm');
-    if (onboardingForm) {
-        onboardingForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                full_name: document.getElementById('onboardName').value,
-                email: document.getElementById('onboardId').value, // Used as unique identifier
-                phone: document.getElementById('onboardPhone').value,
-                room_number: document.getElementById('onboardRoom').value
-            };
-            
-            const msgElement = document.getElementById('onboardingMessage');
-            msgElement.style.color = 'var(--text-secondary)';
-            msgElement.innerHTML = 'Registering student...';
-            
-            try {
-                const res = await fetch('/admin/students', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
-                
-                if (res.ok) {
-                    msgElement.style.color = '#4ade80';
-                    msgElement.innerHTML = `✓ ${data.message} ID: ${data.student.id} ${data.allocation ? '(Allocated: ' + data.allocation.room_number + ')' : ''}`;
-                    onboardingForm.reset();
-                    // Auto-refresh main admin stats & allocations since a student was added
-                    fetchAdminStats();
-                    fetchAllocations();
-                    // Go to dashboard after 2 seconds to see the change
-                    setTimeout(() => switchAdminTab('Dashboard'), 2000);
-                } else {
-                    msgElement.style.color = 'var(--error)';
-                    msgElement.innerHTML = `✗ ${data.error}`;
-                }
-            } catch (err) {
-                console.error('Onboarding Error:', err);
-                msgElement.style.color = 'var(--error)';
-                msgElement.innerHTML = '✗ Connection error.';
-            }
-        });
-    }
 
     // ---------- Room Management Command Center ----------
     async function fetchAdminRooms() {
