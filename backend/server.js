@@ -23,6 +23,9 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // 3. Configure the Database Connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('neon') || process.env.DATABASE_URL.includes('render'))
+        ? { rejectUnauthorized: false }
+        : false
 });
 
 // Prevent database connection issues from crashing the node server process
