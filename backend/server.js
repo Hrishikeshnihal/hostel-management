@@ -7,12 +7,14 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const authenticateToken = require('./middleware/auth');
 const authorizeRoles = require('./middleware/roleAuth');
-let firebaseAdmin = null;
-let firebaseLoadError = null;
+let firebaseAuth = null;
+let firebaseInitError = null;
 try {
-    firebaseAdmin = require('./firebaseAdmin');
+    const fb = require('./firebaseAdmin');
+    firebaseAuth = fb.firebaseAuth;
+    firebaseInitError = fb.firebaseInitError;
 } catch (e) {
-    firebaseLoadError = e.message;
+    firebaseInitError = 'Module load failed: ' + e.message;
     console.error('FATAL: Failed to load firebaseAdmin module:', e.message);
 }
 
@@ -38,12 +40,11 @@ const pool = new Pool({
 
 // Debug endpoint to verify Firebase Admin initialization (always available)
 app.get('/debug/firebase', (req, res) => {
-    if (firebaseLoadError) {
-        return res.status(500).json({ error: 'Module load failed: ' + firebaseLoadError });
+    if (firebaseInitError) {
+        return res.status(500).json({ error: firebaseInitError });
     }
-    const initError = firebaseAdmin ? firebaseAdmin.firebaseInitError : 'firebaseAdmin is null';
-    if (initError) {
-        return res.status(500).json({ error: 'Init failed: ' + initError });
+    if (!firebaseAuth) {
+        return res.status(500).json({ error: 'firebaseAuth is null (no error reported)' });
     }
     res.json({ status: 'Firebase Admin initialized successfully' });
 });
@@ -161,9 +162,8 @@ app.get('/dashboard', authenticateToken, (req, res) => {
 app.post('/auth/firebase', async (req, res) => {
     try {
         // Guard: check that Firebase Admin loaded
-        if (!firebaseAdmin || firebaseLoadError || firebaseAdmin.firebaseInitError) {
-            const reason = firebaseLoadError || (firebaseAdmin && firebaseAdmin.firebaseInitError) || 'unknown';
-            return res.status(500).json({ error: 'Firebase Admin SDK not available: ' + reason });
+        if (!firebaseAuth || firebaseInitError) {
+            return res.status(500).json({ error: 'Firebase Admin SDK not available: ' + (firebaseInitError || 'unknown') });
         }
 
         const { idToken, selectedRole } = req.body || {};
@@ -173,7 +173,7 @@ app.post('/auth/firebase', async (req, res) => {
         }
 
         // 1. Verify the Firebase ID token
-        const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+        const decodedToken = await firebaseAuth.verifyIdToken(idToken);
         const firebaseEmail = decodedToken.email;
         const firebaseName = decodedToken.name || decodedToken.email.split('@')[0];
         const firebaseUid = decodedToken.uid;
