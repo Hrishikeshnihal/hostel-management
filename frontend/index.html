@@ -174,13 +174,7 @@
       1697px 1551px #fff, 439px 472px #fff, 1491px 677px #fff, 1364px 599px #fff, 34px 382px #fff,
       1221px 1584px #fff, 1266px 1499px #fff, 169px 1907px #fff, 1219px 1125px #fff, 659px 18px #fff,
       1731px 1959px #fff, 332px 1216px #fff, 1913px 788px #fff, 80px 712px #fff, 326px 1605px #fff,
-      574px 1502px #fff, 473px 1653px #fff, 404px 975px #fff, 322px 1797px #fff, 425px 1321px #fff,
-      1121px 1797px #fff, 731px 647px #fff, 891px 1584px #fff, 1523px 109px #fff, 1379px 244px #fff,
-      865px 1064px #fff, 493px 956px #fff, 624px 1380px #fff, 440px 619px #fff, 1630px 767px #fff,
-      955px 1196px #fff, 62px 729px #fff, 126px 946px #fff, 1256px 896px #fff, 1444px 256px #fff,
-      661px 1628px #fff, 1078px 1716px #fff, 300px 737px #fff, 1734px 413px #fff, 1296px 129px #fff,
-      1771px 1678px #fff, 977px 1764px #fff, 1879px 549px #fff, 665px 1531px #fff, 89px 701px #fff,
-      1084px 1183px #fff, 1597px 1576px #fff, 1354px 1774px #fff, 554px 1471px #fff, 1469px 287px #fff;
+      574px 1502px #fff, 473px 1653px #fff, 404px 975px #fff, 322px 1797px #fff, 425px 1321px #fff;
     animation: animStar 50s linear infinite;
   }
   #stars:after {
@@ -192,10 +186,7 @@
     background: transparent;
     box-shadow:
       501px 811px #fff, 1450px 1324px #fff, 1093px 1780px #fff, 1469px 678px #fff, 904px 741px #fff,
-      1160px 781px #fff, 1841px 1962px #fff, 1630px 1667px #fff, 1788px 676px #fff, 367px 1734px #fff,
-      1343px 156px #fff, 1283px 1142px #fff, 1062px 378px #fff, 1395px 467px #fff, 1017px 1891px #fff,
-      137px 1114px #fff, 1767px 1403px #fff, 1543px 11px #fff, 1078px 181px #fff, 1189px 1574px #fff,
-      1697px 1551px #fff, 439px 472px #fff, 1491px 677px #fff, 1364px 599px #fff, 34px 382px #fff;
+      1160px 781px #fff, 1841px 1962px #fff, 1630px 1667px #fff, 1788px 676px #fff, 367px 1734px #fff;
   }
 
   #stars2 {
@@ -205,8 +196,7 @@
     box-shadow:
       1925px 1320px #fff, 693px 1778px #fff, 1016px 711px #fff, 1171px 563px #fff, 661px 1919px #fff,
       1610px 44px #fff, 1275px 140px #fff, 1208px 1802px #fff, 1473px 1587px #fff, 11px 1117px #fff,
-      853px 1757px #fff, 1149px 937px #fff, 1353px 428px #fff, 270px 279px #fff, 258px 1404px #fff,
-      417px 1188px #fff, 286px 561px #fff, 393px 1765px #fff, 147px 881px #fff, 666px 1097px #fff;
+      853px 1757px #fff, 1149px 937px #fff, 1353px 428px #fff, 270px 279px #fff, 258px 1404px #fff;
     animation: animStar 100s linear infinite;
   }
   #stars2:after {
@@ -217,8 +207,7 @@
     height: 2px;
     background: transparent;
     box-shadow:
-      1925px 1320px #fff, 693px 1778px #fff, 1016px 711px #fff, 1171px 563px #fff, 661px 1919px #fff,
-      1610px 44px #fff, 1275px 140px #fff, 1208px 1802px #fff, 1473px 1587px #fff, 11px 1117px #fff;
+      1925px 1320px #fff, 693px 1778px #fff, 1016px 711px #fff, 1171px 563px #fff, 661px 1919px #fff;
   }
 
   #stars3 {
@@ -246,13 +235,13 @@
     to { transform: translateY(-2000px); }
   }
 
-  .card{ width:100%; max-width:400px; }
+  .card{ width:100%; max-width:420px; }
 
   .brand-row{
     display:flex;
     align-items:center;
     gap:10px;
-    margin-bottom:32px;
+    margin-bottom:28px;
   }
 
   .brand-mark{
@@ -269,6 +258,71 @@
 
   .brand-name{ font-weight:600; font-size:.95rem; color: var(--paper); }
 
+  /* ---------- Role Selector ---------- */
+  .role-selector{
+    display:flex;
+    gap:10px;
+    margin-bottom:24px;
+  }
+
+  .role-option{
+    flex:1;
+    position:relative;
+    cursor:pointer;
+  }
+
+  .role-option input[type="radio"]{
+    position:absolute;
+    opacity:0;
+    width:0;
+    height:0;
+  }
+
+  .role-label{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    padding:16px 12px;
+    border:2px solid var(--line);
+    border-radius:14px;
+    background: var(--panel);
+    transition: all .3s ease;
+    text-align:center;
+  }
+
+  .role-option input:checked + .role-label{
+    border-color: var(--glow);
+    background: rgba(247,185,85,0.08);
+    box-shadow: 0 0 20px rgba(247,185,85,0.1);
+  }
+
+  .role-option:hover .role-label{
+    border-color: var(--mist);
+  }
+
+  .role-option input:checked + .role-label .role-icon{
+    color: var(--glow);
+  }
+
+  .role-icon{
+    font-size:1.6rem;
+    color: var(--mist);
+    transition: color .3s ease;
+  }
+
+  .role-title{
+    font-weight:600;
+    font-size:.85rem;
+    color: var(--paper);
+  }
+
+  .role-subtitle{
+    font-size:.72rem;
+    color: var(--mist);
+  }
+
+  /* ---------- Tabs ---------- */
   .tabs{
     position:relative;
     display:flex;
@@ -276,6 +330,7 @@
     border:1px solid var(--line);
     border-radius:999px;
     padding:4px;
+    margin-bottom:4px;
   }
 
   .tab-pill{
@@ -306,11 +361,62 @@
 
   .tab-btn.active{ color: var(--ink); }
 
+  /* ---------- Google button ---------- */
+  .btn-google{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    padding:13px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background: var(--panel);
+    color: var(--paper);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:.9rem;
+    cursor:pointer;
+    transition: all .2s ease;
+    margin-top:22px;
+  }
+
+  .btn-google:hover{
+    border-color: var(--mist);
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  }
+
+  .btn-google:active{ transform: translateY(0); }
+
+  .btn-google svg{ flex-shrink:0; }
+
+  /* ---------- Divider ---------- */
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:20px 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color: var(--mist-dim);
+  }
+
+  .divider::before, .divider::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background: var(--line);
+  }
+
+  /* ---------- Form ---------- */
   form{
     display:none;
     flex-direction:column;
     gap:16px;
-    margin-top:26px;
   }
 
   form.active{
@@ -375,32 +481,6 @@
     color: var(--ember);
   }
 
-  .row-between{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    font-size:.82rem;
-    flex-wrap:wrap;
-    gap:8px;
-  }
-
-  .checkbox-label{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color: var(--mist);
-    cursor:pointer;
-  }
-
-  input[type="checkbox"]{
-    accent-color: var(--glow);
-    width:16px; height:16px;
-    flex-shrink:0;
-  }
-
-  a.link{ color: var(--glow); text-decoration:none; }
-  a.link:hover{ text-decoration:underline; }
-
   .btn-primary{
     background: linear-gradient(135deg, var(--glow), var(--ember));
     border:none;
@@ -429,6 +509,9 @@
     color: var(--mist);
     margin-top:2px;
   }
+
+  a.link{ color: var(--glow); text-decoration:none; }
+  a.link:hover{ text-decoration:underline; }
 
   .helper-footer{
     margin-top:30px;
@@ -461,6 +544,20 @@
 
   .toast.show{ opacity:1; transform: translate(-50%, 0); }
 
+  /* ---------- Loading spinner ---------- */
+  .spinner{
+    display:inline-block;
+    width:18px; height:18px;
+    border:2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--ink);
+    border-radius:50%;
+    animation: spin .6s linear infinite;
+  }
+
+  @keyframes spin{
+    to{ transform: rotate(360deg); }
+  }
+
   :focus-visible{ outline: 2px solid var(--glow); outline-offset:2px; }
 
   @media (max-width: 900px){
@@ -472,16 +569,19 @@
     .panel{ padding:32px 24px 48px; }
   }
 
-  @media (prefers-reduced-motion: reduce){
-    .window.lit{ animation:none !important; }
-    form.active{ animation:none !important; }
-  }
   @media (max-width: 768px) {
     .wrap { grid-template-columns: 1fr; }
     .hero { min-height: 250px; }
     .hero-content { position: relative; padding: 30px 24px; }
     .panel { padding: 40px 24px; align-items: flex-start; }
-    .auth-box { width: 100%; margin: 0 auto; }
+    .card { width: 100%; margin: 0 auto; }
+    .role-selector { gap: 8px; }
+    .role-label { padding: 12px 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .window.lit{ animation:none !important; }
+    form.active{ animation:none !important; }
   }
 </style>
 </head>
@@ -519,33 +619,68 @@
         <div class="brand-name">Wingmate</div>
       </div>
 
+      <!-- Role Selector -->
+      <div class="role-selector">
+        <label class="role-option">
+          <input type="radio" name="loginRole" value="student" checked>
+          <div class="role-label">
+            <div class="role-icon">🎓</div>
+            <div class="role-title">Student</div>
+            <div class="role-subtitle">Access your room & fees</div>
+          </div>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="loginRole" value="hostel-owner">
+          <div class="role-label">
+            <div class="role-icon">🏠</div>
+            <div class="role-title">Hostel Owner</div>
+            <div class="role-subtitle">Manage your hostel</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Tabs -->
       <div class="tabs">
         <div class="tab-pill" id="tabPill"></div>
         <button type="button" class="tab-btn active" data-tab="login">Log in</button>
         <button type="button" class="tab-btn" data-tab="register">Register</button>
       </div>
 
-      <!-- Login -->
+      <!-- ===== Login Tab ===== -->
       <form id="loginForm" class="active" novalidate>
+
+        <!-- Google Sign-In -->
+        <button type="button" class="btn-google" id="googleSignInBtn">
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">or sign in with email</div>
+
         <div class="field">
           <label for="loginEmail">Email Address</label>
           <input id="loginEmail" type="email" placeholder="you@college.edu" required>
         </div>
         <div class="field password-field">
           <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" placeholder="••••••••" required minlength="8">
+          <input id="loginPass" type="password" placeholder="••••••••" required minlength="6">
           <button type="button" class="toggle-eye" data-target="loginPass" aria-label="Show password"></button>
-        </div>
-        <div class="row-between">
-          <label class="checkbox-label"><input type="checkbox"> Remember this device</label>
-          <a href="#" class="link">Forgot password?</a>
         </div>
         <button type="submit" class="btn-primary"><span class="btn-label">Sign in</span></button>
         <p class="switch-line">New to the hostel? <a href="#" class="link" data-switch="register">Register instead</a></p>
       </form>
 
-      <!-- Register -->
+      <!-- ===== Register Tab ===== -->
       <form id="registerForm" novalidate>
+
+        <!-- Google Sign-Up -->
+        <button type="button" class="btn-google" id="googleSignUpBtn">
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">or register with email</div>
+
         <div class="field">
           <label for="regName">Full name</label>
           <input id="regName" type="text" placeholder="e.g. Aryan Mhapralkar" required>
@@ -554,19 +689,17 @@
           <label for="regEmail">Email address</label>
           <input id="regEmail" type="email" placeholder="you@example.com" required>
         </div>
-        <input type="hidden" id="regRole" value="Admin">
         <div class="field password-field">
           <label for="regPass">Password</label>
-          <input id="regPass" type="password" placeholder="At least 8 characters" required minlength="8">
+          <input id="regPass" type="password" placeholder="At least 6 characters" required minlength="6">
           <button type="button" class="toggle-eye" data-target="regPass" aria-label="Show password"></button>
         </div>
         <div class="field password-field">
           <label for="regConfirm">Confirm password</label>
-          <input id="regConfirm" type="password" placeholder="Re-enter password" required minlength="8">
+          <input id="regConfirm" type="password" placeholder="Re-enter password" required minlength="6">
           <button type="button" class="toggle-eye" data-target="regConfirm" aria-label="Show password"></button>
           <span class="field-error" id="regPassError">Passwords don't match</span>
         </div>
-        <label class="checkbox-label"><input type="checkbox" required> I agree to the hostel code of conduct</label>
         <button type="submit" class="btn-primary"><span class="btn-label">Create account</span></button>
         <p class="switch-line">Already registered? <a href="#" class="link" data-switch="login">Log in instead</a></p>
       </form>
@@ -578,13 +711,95 @@
 
 </div>
 
+<!-- Firebase SDK (compat mode for simplicity in plain HTML) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
 <script>
+  // ===== Firebase Configuration =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBnc-FKLvG6tM1uvz73lj-9JUUmE5875Dk",
+    authDomain: "wingmate-fd161.firebaseapp.com",
+    projectId: "wingmate-fd161",
+    storageBucket: "wingmate-fd161.firebasestorage.app",
+    messagingSenderId: "695063596970",
+    appId: "1:695063596970:web:6c89325a2a64b58ab525d3",
+    measurementId: "G-WYKSND9Y2L"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  // ===== Helper: Get selected role =====
+  function getSelectedRole() {
+    const checked = document.querySelector('input[name="loginRole"]:checked');
+    return checked ? checked.value : 'student';
+  }
+
+  // ===== Helper: Send Firebase token to our backend =====
+  async function authenticateWithBackend(firebaseUser) {
+    const idToken = await firebaseUser.getIdToken();
+    const selectedRole = getSelectedRole();
+
+    const response = await fetch('/auth/firebase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, selectedRole })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Backend authentication failed');
+    }
+
+    return data;
+  }
+
+  // ===== Helper: Store token & redirect =====
+  function handleAuthSuccess(data) {
+    // Store token (compatible with both dashboard scripts)
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('adminToken', data.token);
+    localStorage.setItem('role', data.user.role);
+
+    showToast('Login successful! Redirecting...');
+
+    setTimeout(() => {
+      if (data.user.role === 'Student') {
+        window.location.href = 'dashboard.html';
+      } else {
+        window.location.href = 'admin-dashboard.html';
+      }
+    }, 800);
+  }
+
+  // ===== Google Sign-In =====
+  async function handleGoogleSignIn() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      const result = await auth.signInWithPopup(provider);
+      const data = await authenticateWithBackend(result.user);
+      handleAuthSuccess(data);
+    } catch (err) {
+      console.error('Google sign-in error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        showToast('Sign-in cancelled.');
+      } else {
+        showToast(err.message || 'Google sign-in failed.');
+      }
+    }
+  }
+
+  document.getElementById('googleSignInBtn').addEventListener('click', handleGoogleSignIn);
+  document.getElementById('googleSignUpBtn').addEventListener('click', handleGoogleSignIn);
+
   // ---------- Animated window facade ----------
   function buildWindowGrid(){
     const grid = document.getElementById('windowGrid');
     if(!grid) return;
     grid.innerHTML = '';
-    const cell = 32; // cell + gap, matches CSS
+    const cell = 32;
     const cols = Math.ceil(grid.clientWidth / cell) + 1;
     const rows = Math.ceil(grid.clientHeight / cell) + 1;
     const total = Math.max(cols * rows, 60);
@@ -674,101 +889,100 @@
     window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3400);
   }
 
-  // ---------- Submit handling (Connected to Backend) ----------
-  async function handleSubmit(e, type) {
+  // ---------- Email/Password Login via Firebase ----------
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
-
-    if(!form.checkValidity()){
-      form.reportValidity();
-      return;
-    }
+    if(!form.checkValidity()){ form.reportValidity(); return; }
 
     const btn = form.querySelector('.btn-primary');
     const label = btn.querySelector('.btn-label');
     const original = label.textContent;
     btn.disabled = true;
-    label.textContent = type === 'login' ? 'Signing in…' : 'Creating account…';
+    label.textContent = 'Signing in…';
 
     try {
-      if (type === 'register') {
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-        const confirm = document.getElementById('regConfirm').value;
-        const role = document.getElementById('regRole').value;
-        const errorEl = document.getElementById('regPassError');
-        
-        if (pass !== confirm) {
-          errorEl.style.display = 'block';
-          document.getElementById('regConfirm').focus();
-          btn.disabled = false;
-          label.textContent = original;
-          return;
-        }
-        errorEl.style.display = 'none';
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPass').value;
 
-        // 1. Send Registration Data to Backend
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password: pass, role: role })
-        });
+      // Sign in with Firebase Auth
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
 
-        const data = await response.json();
+      // Send Firebase token to our backend
+      const data = await authenticateWithBackend(userCredential.user);
+      handleAuthSuccess(data);
 
-        if (response.ok) {
-          showToast('Account created successfully! Please log in.');
-          setTab('login'); // Switch UI to login tab
-          form.reset();    // Clear registration fields
-        } else {
-          showToast(data.error || 'Registration failed.');
-        }
-      }
-
-      if (type === 'login') {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPass').value;
-
-        // 2. Send Login Data to Backend
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          // 3. Save the JWT Token
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.user.role);
-          
-          showToast('Login successful! Redirecting...');
-          
-          // 4. Redirect based on role
-          setTimeout(() => {
-            if (data.user.role === 'Student') {
-              window.location.href = 'dashboard.html';
-            } else {
-              window.location.href = 'admin-dashboard.html';
-            }
-          }, 1000);
-        } else {
-          showToast(data.error || 'Invalid credentials.');
-        }
-      }
     } catch (err) {
-      console.error(err);
-      showToast('Could not connect to the server. Is the backend running?');
+      console.error('Login error:', err);
+      let msg = 'Login failed.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        msg = 'Invalid email or password.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many attempts. Please try again later.';
+      } else if (err.message) {
+        msg = err.message;
+      }
+      showToast(msg);
     } finally {
       btn.disabled = false;
       label.textContent = original;
     }
-  }
+  });
 
-  document.getElementById('loginForm').addEventListener('submit', e => handleSubmit(e, 'login'));
-  document.getElementById('registerForm').addEventListener('submit', e => handleSubmit(e, 'register'));
+  // ---------- Email/Password Registration via Firebase ----------
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    if(!form.checkValidity()){ form.reportValidity(); return; }
+
+    const btn = form.querySelector('.btn-primary');
+    const label = btn.querySelector('.btn-label');
+    const original = label.textContent;
+
+    const pass = document.getElementById('regPass').value;
+    const confirm = document.getElementById('regConfirm').value;
+    const errorEl = document.getElementById('regPassError');
+
+    if (pass !== confirm) {
+      errorEl.style.display = 'block';
+      document.getElementById('regConfirm').focus();
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    btn.disabled = true;
+    label.textContent = 'Creating account…';
+
+    try {
+      const name = document.getElementById('regName').value;
+      const email = document.getElementById('regEmail').value;
+
+      // Create user in Firebase Auth
+      const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+
+      // Update display name in Firebase
+      await userCredential.user.updateProfile({ displayName: name });
+
+      // Send Firebase token to our backend (creates user in our DB too)
+      const data = await authenticateWithBackend(userCredential.user);
+      handleAuthSuccess(data);
+
+    } catch (err) {
+      console.error('Registration error:', err);
+      let msg = 'Registration failed.';
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'An account with this email already exists. Try logging in.';
+      } else if (err.code === 'auth/weak-password') {
+        msg = 'Password is too weak. Use at least 6 characters.';
+      } else if (err.message) {
+        msg = err.message;
+      }
+      showToast(msg);
+    } finally {
+      btn.disabled = false;
+      label.textContent = original;
+    }
+  });
 </script>
 
 </body>

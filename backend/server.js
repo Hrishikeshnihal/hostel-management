@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const authenticateToken = require('./middleware/auth');
 const authorizeRoles = require('./middleware/roleAuth');
+const firebaseAdmin = require('./firebaseAdmin');
 
 // 2. Initialize the Express application
 const app = express();
@@ -131,6 +132,88 @@ app.get('/dashboard', authenticateToken, (req, res) => {
         userRole: req.user.role,
         userId: req.user.id
     });
+});
+
+// ====== Firebase Authentication Route ======
+// This route verifies a Firebase ID token (from Google or email/password sign-in)
+// and issues our own JWT for all subsequent API calls.
+app.post('/auth/firebase', async (req, res) => {
+    try {
+        const { idToken, selectedRole } = req.body || {};
+
+        if (!idToken) {
+            return res.status(400).json({ error: 'Firebase ID token is required' });
+        }
+
+        // 1. Verify the Firebase ID token
+        const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+        const firebaseEmail = decodedToken.email;
+        const firebaseName = decodedToken.name || decodedToken.email.split('@')[0];
+        const firebaseUid = decodedToken.uid;
+
+        if (!firebaseEmail) {
+            return res.status(400).json({ error: 'No email found in Firebase token' });
+        }
+
+        // 2. Look up user in our database by email
+        const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [firebaseEmail]);
+
+        let user;
+        if (userResult.rows.length > 0) {
+            // Existing user — use their stored role and owner_id
+            user = userResult.rows[0];
+        } else {
+            // New user — create account with the selected role
+            const dbRole = (selectedRole === 'hostel-owner') ? 'Admin' : 'Student';
+
+            // Create a placeholder password hash (Firebase manages auth, not us)
+            const placeholderHash = await bcrypt.hash(firebaseUid + Date.now(), 10);
+
+            let ownerId = null;
+            if (dbRole === 'Student') {
+                // Assign to the first admin (single-owner setup)
+                const ownerResult = await pool.query(
+                    "SELECT id FROM users WHERE LOWER(role) = 'admin' ORDER BY created_at ASC LIMIT 1"
+                );
+                if (ownerResult.rows.length > 0) {
+                    ownerId = ownerResult.rows[0].id;
+                }
+            }
+
+            const newUser = await pool.query(
+                'INSERT INTO users (full_name, email, password_hash, role, owner_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+                [firebaseName, firebaseEmail, placeholderHash, dbRole, ownerId]
+            );
+            user = newUser.rows[0];
+
+            // For a new Admin, set owner_id to their own id
+            if (dbRole === 'Admin') {
+                await pool.query('UPDATE users SET owner_id = $1 WHERE id = $1', [user.id]);
+                user.owner_id = user.id;
+            }
+        }
+
+        // 3. Issue our own JWT (same shape as the existing /login route)
+        const token = jwt.sign(
+            { id: user.id, role: user.role, owner_id: user.owner_id || user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        // 4. Return token + user info (same format as /login)
+        res.status(200).json({
+            message: 'Authenticated successfully!',
+            token: token,
+            user: { id: user.id, name: user.full_name, role: user.role }
+        });
+
+    } catch (err) {
+        console.error('Firebase auth error:', err.message);
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'A user with this email already exists' });
+        }
+        res.status(401).json({ error: 'Firebase authentication failed: ' + err.message });
+    }
 });
 
 // CREATE a new room (Admin Only)
