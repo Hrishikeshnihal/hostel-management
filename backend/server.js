@@ -33,12 +33,17 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // 3. Configure the Database Connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 2,
-    idleTimeoutMillis: 5000,
-    connectionTimeoutMillis: 10000,
+    max: 1,
+    idleTimeoutMillis: 1000,
+    connectionTimeoutMillis: 5000,
+    allowExitOnIdle: true,
     ssl: process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('neon') || process.env.DATABASE_URL.includes('render'))
         ? { rejectUnauthorized: false }
         : false
+});
+
+pool.on('error', (err) => {
+    console.error('Unexpected database pool error:', err.message);
 });
 
 // Debug endpoint to verify Firebase Admin initialization (always available)
