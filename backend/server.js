@@ -166,7 +166,7 @@ app.post('/auth/firebase', async (req, res) => {
             return res.status(500).json({ error: 'Firebase Admin SDK not available: ' + (firebaseInitError || 'unknown') });
         }
 
-        const { idToken, selectedRole } = req.body || {};
+        const { idToken, selectedRole, hostelName } = req.body || {};
 
         if (!idToken) {
             return res.status(400).json({ error: 'Firebase ID token is required' });
@@ -218,11 +218,12 @@ app.post('/auth/firebase', async (req, res) => {
                 await pool.query('UPDATE users SET owner_id = $1 WHERE id = $1', [user.id]);
                 user.owner_id = user.id;
 
+                const nameForHostel = hostelName || `${firebaseName}'s Hostel`;
                 await pool.query(
                     `INSERT INTO hostel_settings (setting_key, setting_value, owner_id)
                      VALUES ('hostel_name', $1, $2), ('default_rent', '5000', $2)
-                     ON CONFLICT DO NOTHING`,
-                    [`${firebaseName}'s Hostel`, user.id]
+                     ON CONFLICT (owner_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value`,
+                    [nameForHostel, user.id]
                 );
             }
         }

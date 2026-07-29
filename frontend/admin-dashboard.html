@@ -473,7 +473,6 @@
     <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-bell"/></svg>Notices</a>
     <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-list"/></svg>Gate Passes</a>
     <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-settings"/></svg>Settings</a>
-    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-settings"/></svg>Onboarding</a>
   </aside>
 
   <div class="main-area">
@@ -799,45 +798,7 @@
             </div>
         </div>
 
-        <!-- Student Onboarding -->
-        <div class="bento-card stagger-item stagger-5" id="card-onboarding" style="padding: 32px; display: none; max-width: 600px; margin: 0 auto;">
-            <div style="margin-bottom: 32px;">
-                <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); letter-spacing: -0.5px;">Student Onboarding</h2>
-                <p style="margin: 6px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">Register a new student into Wingmate.</p>
-            </div>
-            <form id="onboardingForm" style="display: flex; flex-direction: column; gap: 20px;">
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Full Name</label>
-                    <input type="text" id="onboardName" required placeholder="e.g. John Doe"
-                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Student ID (Email or Roll No)</label>
-                    <input type="text" id="onboardId" required placeholder="e.g. john@wingmate.edu"
-                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Phone Number</label>
-                    <input type="text" id="onboardPhone" required placeholder="e.g. +1 234 567 8900"
-                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Assign Room (Optional)</label>
-                    <select id="onboardRoom" style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
-                        <option value="" style="background: var(--surface);">None - Assign Later</option>
-                    </select>
-                </div>
-                <div style="padding: 16px; background: rgba(0,0,0,0.02); border-radius: 8px; margin-top: 8px;">
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
-                        <strong>Note:</strong> Initial password will be automatically set to <code style="background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px;">wingmate123</code>.
-                    </p>
-                </div>
-                <button type="submit" style="width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                    Register Student
-                </button>
-            </form>
-            <div id="onboardingMessage" style="margin-top: 20px; font-size: 0.85rem; text-align: center; min-height: 20px;"></div>
-        </div>
+
 
       </div>
 

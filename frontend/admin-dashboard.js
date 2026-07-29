@@ -222,8 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'Complaints': ['card-complaints'],
         'Notices': ['card-admin-notices'],
         'Gate Passes': ['card-admin-gatepass'],
-        'Settings': ['card-settings'],
-        'Onboarding': ['card-onboarding']
+        'Settings': ['card-settings']
     };
 
     window.switchAdminTab = function(navText) {

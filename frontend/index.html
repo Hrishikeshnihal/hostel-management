@@ -685,6 +685,10 @@
           <label for="regName">Full name</label>
           <input id="regName" type="text" placeholder="e.g. Aryan Mhapralkar" required>
         </div>
+        <div class="field" id="hostelNameField" style="display: none;">
+          <label for="regHostelName">Hostel Name</label>
+          <input id="regHostelName" type="text" placeholder="e.g. Wingmate Cyber Hostel">
+        </div>
         <div class="field">
           <label for="regEmail">Email address</label>
           <input id="regEmail" type="email" placeholder="you@example.com" required>
@@ -736,15 +740,38 @@
     return checked ? checked.value : 'student';
   }
 
+  function updateHostelNameFieldVisibility() {
+    const role = getSelectedRole();
+    const field = document.getElementById('hostelNameField');
+    const input = document.getElementById('regHostelName');
+    if (field && input) {
+      if (role === 'hostel-owner') {
+        field.style.display = 'block';
+        input.required = true;
+      } else {
+        field.style.display = 'none';
+        input.required = false;
+      }
+    }
+  }
+
+  document.querySelectorAll('input[name="loginRole"]').forEach(radio => {
+    radio.addEventListener('change', updateHostelNameFieldVisibility);
+  });
+  document.addEventListener('DOMContentLoaded', updateHostelNameFieldVisibility);
+  updateHostelNameFieldVisibility();
+
   // ===== Helper: Send Firebase token to our backend =====
   async function authenticateWithBackend(firebaseUser) {
     const idToken = await firebaseUser.getIdToken();
     const selectedRole = getSelectedRole();
+    const hostelNameInput = document.getElementById('regHostelName');
+    const hostelName = (hostelNameInput && selectedRole === 'hostel-owner') ? hostelNameInput.value.trim() : '';
 
     const response = await fetch('/auth/firebase', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, selectedRole })
+      body: JSON.stringify({ idToken, selectedRole, hostelName })
     });
 
     // Safely parse response (may be non-JSON if Vercel returns an error page)
