@@ -29,6 +29,19 @@ const pool = new Pool({
         : false
 });
 
+// Debug endpoint (development only) to verify Firebase Admin initialization
+if (process.env.NODE_ENV !== 'production') {
+    const firebaseInitError = require('./firebaseAdmin').firebaseInitError;
+    app.get('/debug/firebase', (req, res) => {
+        if (firebaseInitError) {
+            res.status(500).json({ error: firebaseInitError });
+        } else {
+            res.json({ status: 'Firebase Admin initialized successfully' });
+        }
+    });
+}
+
+
 // Prevent database connection issues from crashing the node server process
 pool.on('error', (err) => {
     console.error('Unexpected database client error:', err.message || err);
