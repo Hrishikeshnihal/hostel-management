@@ -197,15 +197,6 @@ app.post('/auth/firebase', async (req, res) => {
             const placeholderHash = await bcrypt.hash(firebaseUid + Date.now(), 10);
 
             let ownerId = null;
-            if (dbRole === 'Student') {
-                // Assign to the first admin (single-owner setup)
-                const ownerResult = await pool.query(
-                    "SELECT id FROM users WHERE LOWER(role) = 'admin' ORDER BY created_at ASC LIMIT 1"
-                );
-                if (ownerResult.rows.length > 0) {
-                    ownerId = ownerResult.rows[0].id;
-                }
-            }
 
             const newUser = await pool.query(
                 'INSERT INTO users (full_name, email, password_hash, role, owner_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
@@ -873,20 +864,31 @@ app.put('/student/payments/:id/pay', authenticateToken, async (req, res) => {
 // GET: Fetch all notices (Viewable by Students and Admins)
 app.get('/notices', authenticateToken, async (req, res) => {
     try {
-        let ownerId = req.user.owner_id || req.user.id;
+        let ownerId = null;
 
-        // If student, check if their assigned room links to an owner
         if (req.user.role && req.user.role.toLowerCase() === 'student') {
-            const allocRes = await pool.query(
-                `SELECT r.owner_id FROM allocations a 
-                 JOIN rooms r ON a.room_id = r.id 
-                 WHERE a.student_id = $1 
-                 ORDER BY a.assigned_at DESC LIMIT 1`,
-                [req.user.id]
-            );
-            if (allocRes.rows.length > 0) {
-                ownerId = allocRes.rows[0].owner_id;
+            ownerId = req.user.owner_id;
+
+            // If not directly set on user, check room allocation
+            if (!ownerId) {
+                const allocRes = await pool.query(
+                    `SELECT r.owner_id FROM allocations a 
+                     JOIN rooms r ON a.room_id = r.id 
+                     WHERE a.student_id = $1 
+                     ORDER BY a.assigned_at DESC LIMIT 1`,
+                    [req.user.id]
+                );
+                if (allocRes.rows.length > 0 && allocRes.rows[0].owner_id) {
+                    ownerId = allocRes.rows[0].owner_id;
+                }
             }
+
+            // Unallocated student without an owner receives no notices
+            if (!ownerId) {
+                return res.json([]);
+            }
+        } else {
+            ownerId = req.user.owner_id || req.user.id;
         }
 
         const noticesQuery = await pool.query(
