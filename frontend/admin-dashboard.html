@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Wingmate — Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1115;
+    --surface: #171A20;
+    --surface-alt: #1D212A;
+    --border: #262B35;
+    --text: #E7E9EE;
+    --text-muted: #8B93A1;
+    --text-faint: #565D6B;
+    --accent: #6E9B8F;
+    --accent-dim: rgba(110,155,143,0.13);
+    --warn: #BF6D56;
+    --warn-dim: rgba(191,109,86,0.13);
+    --caution: #B79458;
+    --caution-dim: rgba(183,148,88,0.13);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  ::selection{ background: var(--accent); color: var(--bg); }
+  a{ color: inherit; }
+
+  .shell{
+    display:grid;
+    grid-template-columns: 236px 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background: var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding:20px 14px;
+    gap:2px;
+  }
+
+  .sidebar-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 10px 20px;
+  }
+
+  .brand-mark{
+    width:28px; height:28px;
+    border-radius:7px;
+    background: var(--accent-dim);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.74rem;
+    color: var(--accent);
+  }
+
+  .brand-name{ font-weight:600; font-size:.92rem; color: var(--text); }
+
+  .nav-link{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:10px 12px;
+    border-radius:8px;
+    color: var(--text-muted);
+    text-decoration:none;
+    font-size:.87rem;
+    font-weight:500;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .nav-link .nav-icon{ flex-shrink:0; opacity:.85; color:inherit; }
+  .nav-link:hover{ background: var(--surface-alt); color: var(--text); }
+  .nav-link.active{ background: var(--accent-dim); color: var(--accent); }
+  .nav-link.active .nav-icon{ opacity:1; }
+
+  /* ---------- Main area ---------- */
+  .main-area{ display:flex; flex-direction:column; min-width:0; }
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:10;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding:20px 32px;
+    background: var(--bg);
+    border-bottom:1px solid var(--border);
+  }
+
+  .topbar-title{ font-size:1.05rem; font-weight:600; color: var(--text); margin:0; }
+  .topbar-sub{ font-size:.8rem; color: var(--text-muted); margin:3px 0 0; }
+
+  .topbar-controls{ display:flex; align-items:center; gap:12px; }
+
+  .filter-field{ display:flex; flex-direction:column; gap:4px; }
+
+  .filter-field label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.62rem;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color: var(--text-muted);
+  }
+
+  #monthFilter{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 12px;
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    font-size:.83rem;
+    outline:none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  #monthFilter:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+  #logoutBtn{
+    background:transparent;
+    border:1px solid var(--border);
+    color: var(--text-muted);
+    padding:8px 16px;
+    border-radius:8px;
+    font-family:'Inter', sans-serif;
+    font-size:.82rem;
+    font-weight:500;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+    transition: border-color .15s ease, color .15s ease;
+  }
+
+  #logoutBtn:hover{ border-color: var(--warn); color: var(--warn); }
+  #logoutBtn:focus-visible, #monthFilter:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  main{ padding:28px 32px 64px; max-width:1240px; width:100%; margin:0 auto; }
+
+  /* ---------- Stat cards ---------- */
+  .stats-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
+    margin-bottom:24px;
+  }
+
+  .stat-card{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 20px;
+  }
+
+  .stat-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.66rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color: var(--text-muted);
+    display:block;
+    margin-bottom:12px;
+  }
+
+  .stat-skel{
+    height:22px;
+    width:72px;
+    border-radius:5px;
+    margin-bottom:8px;
+  }
+
+  .stat-caption{ font-size:.74rem; color: var(--text-faint); }
+
+  /* ---------- Tables ---------- */
+  .stack{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .bento-card{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+  }
+
+  .bento-card-head{ display:flex; align-items:baseline; justify-content:space-between; padding:22px 24px 4px; }
+  .bento-card-head .card-title{ font-size:.98rem; font-weight:600; color: var(--text); margin:0; }
+  .card-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.64rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color: var(--text-faint);
+  }
+
+  .table-wrap{ overflow-x:auto; margin-top:16px; }
+
+  table.ledger{ width:100%; border-collapse:collapse; font-size:.87rem; }
+
+  table.ledger thead th{
+    text-align:left;
+    padding:13px 24px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.64rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color: var(--text-muted);
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+
+  table.ledger tbody td{
+    padding:15px 24px;
+    border-bottom:1px solid var(--border);
+    color: var(--text);
+    white-space:nowrap;
+  }
+
+  table.ledger tbody tr:hover{ background: var(--surface-alt); }
+  table.ledger tbody tr:last-child td{ border-bottom:none; }
+
+  .mono-num{ font-family:'IBM Plex Mono', monospace; }
+
+  /* Ready-made status pill classes — apply one when you inject rows */
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:.7rem;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:.02em;
+    white-space:nowrap;
+  }
+  .status-overdue{ background: var(--warn-dim); color: var(--warn); border:1px solid rgba(191,109,86,0.3); }
+  .status-pending{ background: var(--caution-dim); color: var(--caution); border:1px solid rgba(183,148,88,0.3); }
+  .status-paid{ background: var(--accent-dim); color: var(--accent); border:1px solid rgba(110,155,143,0.3); }
+  .status-neutral{ background: var(--surface-alt); color: var(--text-muted); border:1px solid var(--border); }
+
+  /* ---------- Skeleton loading state ---------- */
+  .skeleton-line, .stat-skel{
+    background: linear-gradient(90deg, rgba(255,255,255,0.035) 25%, rgba(255,255,255,0.075) 37%, rgba(255,255,255,0.035) 63%);
+    background-size:400% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+  .skeleton-line{ height:12px; border-radius:5px; }
+
+  @keyframes shimmer{
+    0%{ background-position:100% 50%; }
+    100%{ background-position:0% 50%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .skeleton-line, .stat-skel{ animation:none; }
+  }
+
+  @media (max-width: 980px){
+    .stats-row{ grid-template-columns:repeat(2,1fr); }
+  }
+
+  /* Mobile Header Default */
+  .mobile-header { display: none; }
+
+  /* ==========================================
+     MOBILE RESPONSIVENESS (Screens under 768px)
+     ========================================== */
+  @media (max-width: 768px) {
+      /* 1. Hide the sidebar off-screen by default */
+      .sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 250px;
+          transform: translateX(-100%);
+          transition: transform 0.3s ease-in-out;
+          z-index: 1000;
+          background: var(--bg);
+          box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      }
+
+      /* Class to toggle the sidebar via JavaScript */
+      .sidebar.active {
+          transform: translateX(0);
+      }
+
+      /* 2. Remove the left margin from the main dashboard area */
+      .shell {
+          display: block;
+      }
+      .main-area {
+          margin-left: 0 !important;
+          width: 100%;
+      }
+
+      /* 3. Stack side-by-side elements */
+      form div[style*="display: flex"] {
+          flex-direction: column;
+          gap: 16px;
+      }
+      form#adminSettingsForm > div, form#allocateRoomForm > div {
+          width: 100%;
+      }
+      
+      /* 4. Ensure tables can scroll horizontally */
+      .table-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+      }
+      
+      .mobile-header { display: flex !important; }
+      .topbar { padding: 16px; flex-direction: column; align-items: flex-start; }
+      .stats-row { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Premium Design Upgrades & Micro-animations ---------- */
+  ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+      background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-dim);
+  }
+
+  /* Glassmorphism & Depth */
+  .bento-card, .stat-card {
+      background: rgba(23, 26, 32, 0.6) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.04) !important;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important;
+      transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), border-color 0.4s ease, box-shadow 0.4s ease !important;
+  }
+  
+  .bento-card:hover, .stat-card:hover {
+      transform: translateY(-4px) scale(1.005);
+      border-color: rgba(110, 155, 143, 0.25) !important;
+      box-shadow: 0 12px 40px 0 rgba(110, 155, 143, 0.06), 0 8px 32px 0 rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* Sidebar Links Animations */
+  .nav-link {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  }
+  .nav-link:hover {
+      padding-left: 18px !important;
+      background: var(--surface-alt) !important;
+      color: var(--text) !important;
+  }
+  .nav-link.active {
+      background: linear-gradient(90deg, var(--accent-dim) 0%, rgba(110,155,143,0.02) 100%) !important;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+  }
+
+  /* Glow on Focus for Forms */
+  input, select, textarea {
+      transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  }
+  input:focus, select:focus, textarea:focus {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px var(--accent-dim) !important;
+      transform: translateY(-1px);
+      background: rgba(29, 33, 42, 0.6) !important;
+  }
+
+  /* Premium Buttons */
+  button[type="submit"], button.btn-primary, #onboardingForm button, #addRoomForm button {
+      background: linear-gradient(135deg, var(--accent) 0%, #4a756b 100%) !important;
+      color: var(--bg) !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em !important;
+      box-shadow: 0 4px 14px 0 var(--accent-dim) !important;
+      border: none !important;
+      border-radius: 6px !important;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  }
+  button[type="submit"]:hover, button.btn-primary:hover, #onboardingForm button:hover, #addRoomForm button:hover {
+      transform: translateY(-2px) scale(1.02) !important;
+      box-shadow: 0 6px 20px 0 rgba(110, 155, 143, 0.25) !important;
+      filter: brightness(1.08);
+  }
+  button[type="submit"]:active, button.btn-primary:active {
+      transform: translateY(0) scale(0.98) !important;
+  }
+
+  /* Status Pills Dynamic Glow */
+  .status-pill {
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .status-pill:hover {
+      transform: scale(1.04);
+      filter: brightness(1.15);
+      box-shadow: 0 0 10px currentColor;
+  }
+
+  /* Simplify Form Wrappers visually */
+  #card-dues > div[style*="margin-bottom: 32px"], 
+  #card-allocations > div[style*="margin-bottom: 32px"] {
+      background: transparent !important;
+      border: 1px dashed var(--border) !important;
+      padding: 16px 20px !important;
+      border-radius: 8px !important;
+      margin-bottom: 24px !important;
+  }
+  
+  /* Simplify table spacing and margins */
+  .table-wrap {
+      margin-top: 8px !important;
+  }
+  table.ledger tbody td {
+      padding: 12px 24px !important;
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="icon-grid" viewBox="0 0 18 18"><rect x="2" y="2" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10" y="2" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="2" y="10" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10" y="10" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="icon-coin" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.8 6.2h4.4M6.8 8.4h4.4M6.8 6.2c1.8 0 2.9.7 2.9 2s-1.1 2-2.9 2l3.4 2.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-list" viewBox="0 0 18 18"><path d="M4 5h10M4 9h10M4 13h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="icon-chat" viewBox="0 0 18 18"><path d="M3.5 4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H8l-3.3 2.6v-2.6H4.5a1 1 0 0 1-1-1V4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 18 18"><circle cx="9" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2.6v1.6M9 13.8v1.6M15.4 9h-1.6M4.2 9H2.6M13.2 4.8l-1.1 1.1M5.9 12.1l-1.1 1.1M13.2 13.2l-1.1-1.1M5.9 5.9 4.8 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 18 18"><path d="M7 15H4.2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.3 12.3 14.8 9l-3.5-3.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.8 9H6.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">W</div>
+      <div class="brand-name">Wingmate</div>
+    </div>
+    <a class="nav-link active" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-grid"/></svg>Dashboard</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-coin"/></svg>Dues &amp; Payments</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-list"/></svg>Allocations</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-grid"/></svg>Rooms</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-chat"/></svg>Complaints</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-bell"/></svg>Notices</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-list"/></svg>Gate Passes</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-settings"/></svg>Settings</a>
+    <a class="nav-link" href="#"><svg class="nav-icon" width="18" height="18"><use href="#icon-settings"/></svg>Onboarding</a>
+  </aside>
+
+  <div class="main-area">
+    <!-- Mobile Header & Hamburger Toggle -->
+    <div class="mobile-header" style="justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg);">
+        <h2 style="margin: 0; color: var(--text); font-size: 1.2rem;">Wingmate</h2>
+        <button onclick="toggleSidebar()" style="background: none; border: none; font-size: 1.5rem; color: var(--text); cursor: pointer; padding: 0;">
+            ☰
+        </button>
+    </div>
+
+    <header class="topbar">
+      <div>
+        <p class="topbar-title">Ledger &amp; Allocations</p>
+        <p class="topbar-sub">Track dues, room allocations and open complaints across all blocks.</p>
+      </div>
+      <div class="topbar-controls">
+        <div class="filter-field">
+          <label for="monthFilter">Filter by month</label>
+          <input id="monthFilter" type="month">
+        </div>
+        <button id="logoutBtn" type="button">
+          <svg width="16" height="16"><use href="#icon-logout"/></svg>
+          Log out
+        </button>
+      </div>
+    </header>
+
+    <main>
+
+      <div class="stats-row">
+        <div class="stat-card stagger-item stagger-1">
+          <span class="stat-label">Total Students</span>
+          <div class="stat-val" id="statTotalStudents" style="font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--text); margin-bottom: 8px;">0</div>
+          <span class="stat-caption">Across all blocks</span>
+        </div>
+        <div class="stat-card stagger-item stagger-2">
+          <span class="stat-label">Occupied Rooms</span>
+          <div class="stat-val" id="statOccupiedRooms" style="font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--text); margin-bottom: 8px;">0</div>
+          <span class="stat-caption">Of total capacity</span>
+        </div>
+        <div class="stat-card stagger-item stagger-3">
+          <span class="stat-label">Pending Dues</span>
+          <div class="stat-val" id="statPendingAmount" style="font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--caution); margin-bottom: 8px;">₹0</div>
+          <span class="stat-caption">Total uncollected</span>
+        </div>
+        <div class="stat-card stagger-item stagger-4">
+          <span class="stat-label">Open Complaints</span>
+          <div class="stat-val" id="statOpenComplaints" style="font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--warn); margin-bottom: 8px;">0</div>
+          <span class="stat-caption">Awaiting resolution</span>
+        </div>
+      </div>
+
+      <div class="stack">
+
+        <!-- Table 1: Financial Ledger / Unpaid Dues -->
+        <div class="bento-card" id="card-dues">
+          <div class="bento-card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 class="card-title">Financial Ledger</h2>
+            <span class="card-tag">Payments</span>
+          </div>
+
+          <!-- Minimal Form to Issue a Fee -->
+          <div style="background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 32px;">
+              <h3 style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px; color: var(--text);">Issue New Fee</h3>
+              <form id="issueFeeForm" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                  
+                  <div style="flex: 1; min-width: 110px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Student ID</label>
+                      <input type="number" id="feeStudentId" placeholder="e.g. 1" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); font-family: monospace; outline: none;">
+                  </div>
+
+                  <div style="flex: 1.2; min-width: 140px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Fee Type</label>
+                      <select id="feeType" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); outline: none;">
+                          <option value="Hostel Rent">Hostel Rent</option>
+                          <option value="Mess Fee">Mess Fee</option>
+                          <option value="Maintenance Fine">Maintenance Fine</option>
+                      </select>
+                  </div>
+
+                  <div style="flex: 1; min-width: 110px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Amount (₹)</label>
+                      <input type="number" id="feeAmount" placeholder="5000" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); outline: none;">
+                  </div>
+
+                  <div style="flex: 1; min-width: 130px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Due Date</label>
+                      <input type="date" id="feeDueDate" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); outline: none;">
+                  </div>
+
+                  <button type="submit" style="padding: 9px 16px; background: var(--text); color: var(--bg); border: none; border-radius: 4px; cursor: pointer; font-weight: 500; min-width: 80px;">Issue</button>
+              </form>
+          </div>
+
+          <!-- Master Ledger Table -->
+          <div class="table-wrap">
+              <table class="ledger">
+                  <thead>
+                      <tr>
+                          <th>Student</th>
+                          <th>Type</th>
+                          <th>Amount</th>
+                          <th>Due Date</th>
+                          <th>Status</th>
+                          <th style="text-align: right;">Action</th>
+                      </tr>
+                  </thead>
+                  <tbody id="adminPaymentsTableBody">
+                      <tr>
+                          <td colspan="6" style="padding: 16px 8px; text-align: center; color: var(--text-muted);">Loading payments...</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+        </div>
+
+        <!-- Table 2: Current Allocations -->
+        <div class="bento-card" id="card-allocations">
+          <div class="bento-card-head">
+            <h2 class="card-title">Current Allocations</h2>
+            <span class="card-tag">Occupancy</span>
+          </div>
+
+          <!-- Minimal Form to Allocate a Room -->
+          <div style="background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px;">
+              <h3 style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px; color: var(--text);">Assign Student to Room</h3>
+              
+              <form id="allocateRoomForm" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                  
+                  <div style="flex: 1; min-width: 110px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Student ID</label>
+                      <input type="number" id="allocStudentId" placeholder="e.g. 1" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); font-family: monospace; outline: none;">
+                  </div>
+
+                  <div style="flex: 1; min-width: 110px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Room ID</label>
+                      <input type="number" id="allocRoomId" placeholder="e.g. 1" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); outline: none;">
+                  </div>
+
+                  <div style="flex: 1; min-width: 130px; display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Move-in Date</label>
+                      <input type="date" id="allocMoveInDate" required style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); outline: none;">
+                  </div>
+
+                  <button type="submit" style="padding: 9px 16px; background: var(--text); color: var(--bg); border: none; border-radius: 4px; cursor: pointer; font-weight: 500; min-width: 90px;">Allocate</button>
+              </form>
+              <p id="allocationMessage" style="margin-top: 12px; margin-bottom: 0; font-size: 0.85rem; color: #34d399; display: none;"></p>
+          </div>
+
+          <div class="table-wrap">
+            <table class="ledger">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Room</th>
+                  <th>Block</th>
+                  <th>Move-in Date</th>
+                </tr>
+              </thead>
+              <tbody id="allocationsTable">
+                <tr>
+                  <td><div class="skeleton-line" style="width:110px"></div></td>
+                  <td><div class="skeleton-line" style="width:50px"></div></td>
+                  <td><div class="skeleton-line" style="width:60px"></div></td>
+                  <td><div class="skeleton-line" style="width:80px"></div></td>
+                </tr>
+                <tr>
+                  <td><div class="skeleton-line" style="width:130px"></div></td>
+                  <td><div class="skeleton-line" style="width:50px"></div></td>
+                  <td><div class="skeleton-line" style="width:60px"></div></td>
+                  <td><div class="skeleton-line" style="width:80px"></div></td>
+                </tr>
+                <tr>
+                  <td><div class="skeleton-line" style="width:95px"></div></td>
+                  <td><div class="skeleton-line" style="width:50px"></div></td>
+                  <td><div class="skeleton-line" style="width:60px"></div></td>
+                  <td><div class="skeleton-line" style="width:80px"></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Room Management Command Center -->
+        <div class="bento-card" id="card-rooms" style="display: none;">
+          <div class="bento-card-head" style="margin-bottom: 24px;">
+            <h2 class="card-title">Room Management</h2>
+            <span class="card-tag">Command Center</span>
+          </div>
+          
+          <!-- Add Room Form -->
+          <form id="addRoomForm" style="display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; background: var(--surface-alt); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="flex: 1; min-width: 120px;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Room Number</label>
+                <input type="text" id="addRoomNumber" required placeholder="e.g. A101"
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none;">
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Capacity</label>
+                <input type="number" id="addRoomCapacity" required min="1" placeholder="e.g. 2"
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none;">
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Price / Month</label>
+                <input type="number" id="addRoomPrice" required placeholder="e.g. 5000"
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none;">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" style="padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--accent); color: #000; height: 43px;">
+                    Add Room
+                </button>
+            </div>
+          </form>
+
+          <!-- Rooms Grid -->
+          <div id="roomsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
+            <!-- Rooms injected here -->
+          </div>
+        </div>
+
+        <!-- Table 3 (new): Recent Complaints -->
+        <div class="bento-card" id="card-complaints">
+          <div class="bento-card-head">
+            <h2 class="card-title">Recent Complaints</h2>
+            <span class="card-tag">Maintenance</span>
+          </div>
+          <div class="table-wrap">
+            <table class="ledger">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Room</th>
+                  <th>Issue</th>
+                  <th>Raised On</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="complaintsTable">
+                <tr>
+                  <td><div class="skeleton-line" style="width:110px"></div></td>
+                  <td><div class="skeleton-line" style="width:50px"></div></td>
+                  <td><div class="skeleton-line" style="width:120px"></div></td>
+                  <td><div class="skeleton-line" style="width:80px"></div></td>
+                  <td><div class="skeleton-line" style="width:60px"></div></td>
+                </tr>
+                <tr>
+                  <td><div class="skeleton-line" style="width:95px"></div></td>
+                  <td><div class="skeleton-line" style="width:50px"></div></td>
+                  <td><div class="skeleton-line" style="width:100px"></div></td>
+                  <td><div class="skeleton-line" style="width:80px"></div></td>
+                  <td><div class="skeleton-line" style="width:60px"></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Card 4: Broadcast Notice -->
+        <div class="bento-card" id="card-admin-notices">
+          <div class="bento-card-head" style="margin-bottom: 24px;">
+            <h2 class="card-title">Broadcast Notice</h2>
+            <span class="card-tag">Announcements</span>
+          </div>
+
+          <div style="background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+            <form id="issueNoticeForm" style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Title</label>
+                <input type="text" id="noticeTitle" placeholder="e.g. Water Supply Maintenance" required style="padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text); outline: none;">
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Message Content</label>
+                <textarea id="noticeContent" rows="4" placeholder="Type the announcement here..." required style="padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text); resize: none; outline: none;"></textarea>
+              </div>
+
+              <button type="submit" style="align-self: flex-start; padding: 10px 20px; background: var(--text); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Post Announcement</button>
+            </form>
+          </div>
+          
+          <h3 style="margin-top: 32px; font-size: 1.1rem; color: var(--text);">Existing Announcements</h3>
+          <div id="adminNoticesList" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Loading announcements...</p>
+          </div>
+        </div>
+
+        <!-- Admin Settings Card -->
+        <div class="bento-card" id="card-settings" style="padding: 24px;">
+            <div style="margin-bottom: 24px;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--text);">Global Configuration</h2>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Manage central parameters for the Wingmate platform.</p>
+            </div>
+
+            <form id="adminSettingsForm" onsubmit="updateAdminSettings(event)">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Hostel Name</label>
+                    <input type="text" id="configHostelName" required
+                           style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); outline: none; transition: 0.2s;">
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Default Monthly Rent (₹)</label>
+                    <input type="number" id="configDefaultRent" required
+                           style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); outline: none; transition: 0.2s;">
+                </div>
+                
+                <button type="submit" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #5de2a3; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(93, 226, 163, 0.2);">
+                    Save Configuration
+                </button>
+            </form>
+            
+            <div id="settingsMessage" style="margin-top: 16px; font-size: 0.85rem; text-align: center; min-height: 20px;"></div>
+        </div>
+
+        <!-- Admin Gate Pass Queue -->
+        <div class="bento-card" id="card-admin-gatepass" style="padding: 24px; display: none;">
+            <div style="margin-bottom: 24px;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--text);">Pending Gate Passes</h2>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Review and approve student leave requests.</p>
+            </div>
+            <div id="adminLeaveFeed">
+                <!-- JS Injects Pending Requests Here -->
+            </div>
+        </div>
+
+        <!-- Student Onboarding -->
+        <div class="bento-card stagger-item stagger-5" id="card-onboarding" style="padding: 32px; display: none; max-width: 600px; margin: 0 auto;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); letter-spacing: -0.5px;">Student Onboarding</h2>
+                <p style="margin: 6px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">Register a new student into Wingmate.</p>
+            </div>
+            <form id="onboardingForm" style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Full Name</label>
+                    <input type="text" id="onboardName" required placeholder="e.g. John Doe"
+                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Student ID (Email or Roll No)</label>
+                    <input type="text" id="onboardId" required placeholder="e.g. john@wingmate.edu"
+                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Phone Number</label>
+                    <input type="text" id="onboardPhone" required placeholder="e.g. +1 234 567 8900"
+                           style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Assign Room (Optional)</label>
+                    <select id="onboardRoom" style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; color: var(--text-primary); outline: none; transition: 0.3s var(--spring-bouncy);">
+                        <option value="" style="background: var(--surface);">None - Assign Later</option>
+                    </select>
+                </div>
+                <div style="padding: 16px; background: rgba(0,0,0,0.02); border-radius: 8px; margin-top: 8px;">
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
+                        <strong>Note:</strong> Initial password will be automatically set to <code style="background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px;">wingmate123</code>.
+                    </p>
+                </div>
+                <button type="submit" style="width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Register Student
+                </button>
+            </form>
+            <div id="onboardingMessage" style="margin-top: 20px; font-size: 0.85rem; text-align: center; min-height: 20px;"></div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+</div>
+<script src="modal.js"></script>
+<script src="admin-dashboard.js"></script>
+</body>
+</html>

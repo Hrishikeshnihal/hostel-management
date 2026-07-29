@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Wingmate — Hostel Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #0B0F1A;
+    --panel: #141B2E;
+    --panel-2: #10162A;
+    --line: #232B42;
+    --glow: #F7B955;
+    --glow-dim: rgba(247,185,85,0.16);
+    --ember: #FF6B4A;
+    --screen: #6FA8FF;
+    --paper: #EEF1F8;
+    --mist: #8792AC;
+    --mist-soft: #B7C0D8;
+    --mist-dim: #5B6480;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    font-family:'Inter', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--glow); color: var(--ink); }
+
+  .wrap{
+    display:grid;
+    grid-template-columns: 1.15fr 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- Hero / window facade ---------- */
+  .hero{
+    position:relative;
+    overflow:hidden;
+    background: radial-gradient(120% 100% at 20% 0%, #141C33 0%, var(--ink) 70%);
+    min-height: 100vh;
+  }
+
+  .window-grid{
+    position:absolute;
+    inset:0;
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(26px, 1fr));
+    grid-auto-rows: 26px;
+    gap:6px;
+    padding:20px;
+  }
+
+  .window{
+    border-radius:3px;
+    background: rgba(255,255,255,0.035);
+  }
+
+  .window.lit{
+    background: var(--glow);
+    box-shadow: 0 0 10px var(--glow-dim);
+    animation: flicker 6s ease-in-out infinite;
+  }
+
+  .window.lit.screen{
+    background: var(--screen);
+    box-shadow: 0 0 10px rgba(111,168,255,0.18);
+  }
+
+  @keyframes flicker{
+    0%, 100%{ opacity:1; }
+    45%{ opacity:.55; }
+    55%{ opacity:.82; }
+    78%{ opacity:.62; }
+  }
+
+  .hero-scrim{
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(to top, var(--ink) 0%, rgba(11,15,26,0.85) 28%, transparent 62%),
+      linear-gradient(to right, transparent 65%, rgba(11,15,26,0.5) 100%);
+    pointer-events:none;
+  }
+
+  .hero-content{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding: 56px;
+    z-index:2;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color: var(--mist);
+    display:block;
+  }
+
+  .wordmark{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    line-height:1.02;
+    margin:.35em 0 .3em;
+    color: var(--paper);
+  }
+
+  .tagline{
+    font-size:1rem;
+    line-height:1.55;
+    color: var(--mist-soft);
+    max-width:360px;
+    margin:0 0 28px;
+  }
+
+  .hero-footer{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.74rem;
+    color: var(--mist);
+  }
+
+  .hero-footer .push-right{ margin-left:auto; }
+
+  /* ---------- Form panel ---------- */
+  .panel{
+    position: relative;
+    overflow: hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 40px 32px;
+    background: var(--panel-2);
+  }
+
+  /* Starry background animation */
+  .starry-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #stars {
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow:
+      501px 811px #fff, 1450px 1324px #fff, 1093px 1780px #fff, 1469px 678px #fff, 904px 741px #fff,
+      1160px 781px #fff, 1841px 1962px #fff, 1630px 1667px #fff, 1788px 676px #fff, 367px 1734px #fff,
+      1343px 156px #fff, 1283px 1142px #fff, 1062px 378px #fff, 1395px 467px #fff, 1017px 1891px #fff,
+      137px 1114px #fff, 1767px 1403px #fff, 1543px 11px #fff, 1078px 181px #fff, 1189px 1574px #fff,
+      1697px 1551px #fff, 439px 472px #fff, 1491px 677px #fff, 1364px 599px #fff, 34px 382px #fff,
+      1221px 1584px #fff, 1266px 1499px #fff, 169px 1907px #fff, 1219px 1125px #fff, 659px 18px #fff,
+      1731px 1959px #fff, 332px 1216px #fff, 1913px 788px #fff, 80px 712px #fff, 326px 1605px #fff,
+      574px 1502px #fff, 473px 1653px #fff, 404px 975px #fff, 322px 1797px #fff, 425px 1321px #fff,
+      1121px 1797px #fff, 731px 647px #fff, 891px 1584px #fff, 1523px 109px #fff, 1379px 244px #fff,
+      865px 1064px #fff, 493px 956px #fff, 624px 1380px #fff, 440px 619px #fff, 1630px 767px #fff,
+      955px 1196px #fff, 62px 729px #fff, 126px 946px #fff, 1256px 896px #fff, 1444px 256px #fff,
+      661px 1628px #fff, 1078px 1716px #fff, 300px 737px #fff, 1734px 413px #fff, 1296px 129px #fff,
+      1771px 1678px #fff, 977px 1764px #fff, 1879px 549px #fff, 665px 1531px #fff, 89px 701px #fff,
+      1084px 1183px #fff, 1597px 1576px #fff, 1354px 1774px #fff, 554px 1471px #fff, 1469px 287px #fff;
+    animation: animStar 50s linear infinite;
+  }
+  #stars:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow:
+      501px 811px #fff, 1450px 1324px #fff, 1093px 1780px #fff, 1469px 678px #fff, 904px 741px #fff,
+      1160px 781px #fff, 1841px 1962px #fff, 1630px 1667px #fff, 1788px 676px #fff, 367px 1734px #fff,
+      1343px 156px #fff, 1283px 1142px #fff, 1062px 378px #fff, 1395px 467px #fff, 1017px 1891px #fff,
+      137px 1114px #fff, 1767px 1403px #fff, 1543px 11px #fff, 1078px 181px #fff, 1189px 1574px #fff,
+      1697px 1551px #fff, 439px 472px #fff, 1491px 677px #fff, 1364px 599px #fff, 34px 382px #fff;
+  }
+
+  #stars2 {
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow:
+      1925px 1320px #fff, 693px 1778px #fff, 1016px 711px #fff, 1171px 563px #fff, 661px 1919px #fff,
+      1610px 44px #fff, 1275px 140px #fff, 1208px 1802px #fff, 1473px 1587px #fff, 11px 1117px #fff,
+      853px 1757px #fff, 1149px 937px #fff, 1353px 428px #fff, 270px 279px #fff, 258px 1404px #fff,
+      417px 1188px #fff, 286px 561px #fff, 393px 1765px #fff, 147px 881px #fff, 666px 1097px #fff;
+    animation: animStar 100s linear infinite;
+  }
+  #stars2:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow:
+      1925px 1320px #fff, 693px 1778px #fff, 1016px 711px #fff, 1171px 563px #fff, 661px 1919px #fff,
+      1610px 44px #fff, 1275px 140px #fff, 1208px 1802px #fff, 1473px 1587px #fff, 11px 1117px #fff;
+  }
+
+  #stars3 {
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow:
+      200px 981px #fff, 1731px 521px #fff, 132px 1039px #fff, 1888px 1547px #fff, 899px 1226px #fff,
+      1887px 580px #fff, 1548px 1092px #fff, 1626px 689px #fff, 254px 1072px #fff, 1684px 1211px #fff;
+    animation: animStar 150s linear infinite;
+  }
+  #stars3:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow:
+      200px 981px #fff, 1731px 521px #fff, 132px 1039px #fff, 1888px 1547px #fff, 899px 1226px #fff;
+  }
+
+  @keyframes animStar {
+    from { transform: translateY(0px); }
+    to { transform: translateY(-2000px); }
+  }
+
+  .card{ width:100%; max-width:400px; }
+
+  .brand-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:32px;
+  }
+
+  .brand-mark{
+    width:30px; height:30px;
+    border-radius:8px;
+    background: var(--glow-dim);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:500;
+    font-size:.8rem;
+    color: var(--glow);
+  }
+
+  .brand-name{ font-weight:600; font-size:.95rem; color: var(--paper); }
+
+  .tabs{
+    position:relative;
+    display:flex;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px;
+  }
+
+  .tab-pill{
+    position:absolute;
+    top:4px; bottom:4px; left:0;
+    width:50%;
+    border-radius:999px;
+    background: var(--glow);
+    transition: transform .35s cubic-bezier(.65,0,.35,1), width .35s cubic-bezier(.65,0,.35,1);
+    z-index:0;
+  }
+
+  .tab-btn{
+    position:relative;
+    z-index:1;
+    flex:1;
+    background:none;
+    border:none;
+    padding:10px 0;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:.85rem;
+    color: var(--mist);
+    cursor:pointer;
+    border-radius:999px;
+    transition: color .3s ease;
+  }
+
+  .tab-btn.active{ color: var(--ink); }
+
+  form{
+    display:none;
+    flex-direction:column;
+    gap:16px;
+    margin-top:26px;
+  }
+
+  form.active{
+    display:flex;
+    animation: fadeSlide .4s ease;
+  }
+
+  @keyframes fadeSlide{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .field{ display:flex; flex-direction:column; gap:6px; }
+
+  .field label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.68rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color: var(--mist);
+  }
+
+  .field input, .field select{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    color: var(--paper);
+    font-family:'Inter', sans-serif;
+    font-size:.92rem;
+    outline:none;
+    width:100%;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+
+  .field input::placeholder{ color: var(--mist-dim); }
+
+  .field input:focus, .field select:focus{
+    border-color: var(--glow);
+    box-shadow: 0 0 0 3px var(--glow-dim);
+  }
+
+  .password-field{ position:relative; }
+
+  .toggle-eye{
+    position:absolute;
+    right:12px; top:37px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color: var(--mist);
+    padding:2px;
+    display:flex;
+    line-height:0;
+  }
+
+  .toggle-eye:hover{ color: var(--mist-soft); }
+
+  .field-error{
+    display:none;
+    font-size:.76rem;
+    color: var(--ember);
+  }
+
+  .row-between{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:.82rem;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .checkbox-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color: var(--mist);
+    cursor:pointer;
+  }
+
+  input[type="checkbox"]{
+    accent-color: var(--glow);
+    width:16px; height:16px;
+    flex-shrink:0;
+  }
+
+  a.link{ color: var(--glow); text-decoration:none; }
+  a.link:hover{ text-decoration:underline; }
+
+  .btn-primary{
+    background: linear-gradient(135deg, var(--glow), var(--ember));
+    border:none;
+    color: var(--ink);
+    font-weight:700;
+    font-family:'Inter', sans-serif;
+    padding:14px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:.95rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+    margin-top:4px;
+  }
+
+  .btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 22px rgba(247,185,85,.22); }
+  .btn-primary:active{ transform: translateY(0); }
+  .btn-primary:disabled{ opacity:.7; cursor:default; transform:none; box-shadow:none; }
+
+  .switch-line{
+    text-align:center;
+    font-size:.85rem;
+    color: var(--mist);
+    margin-top:2px;
+  }
+
+  .helper-footer{
+    margin-top:30px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-size:.78rem;
+    color: var(--mist-dim);
+    text-align:center;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:28px;
+    transform: translate(-50%, 16px);
+    background: var(--panel);
+    border:1px solid var(--line);
+    color: var(--paper);
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:.85rem;
+    max-width:min(90vw, 420px);
+    text-align:center;
+    box-shadow: 0 12px 30px rgba(0,0,0,.4);
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .3s ease, transform .3s ease;
+    z-index:20;
+  }
+
+  .toast.show{ opacity:1; transform: translate(-50%, 0); }
+
+  :focus-visible{ outline: 2px solid var(--glow); outline-offset:2px; }
+
+  @media (max-width: 900px){
+    .wrap{ grid-template-columns:1fr; }
+    .hero{ min-height: 260px; }
+    .hero-content{ padding:28px; }
+    .hero-footer{ display:none; }
+    .tagline{ max-width:none; }
+    .panel{ padding:32px 24px 48px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .window.lit{ animation:none !important; }
+    form.active{ animation:none !important; }
+  }
+  @media (max-width: 768px) {
+    .wrap { grid-template-columns: 1fr; }
+    .hero { min-height: 250px; }
+    .hero-content { position: relative; padding: 30px 24px; }
+    .panel { padding: 40px 24px; align-items: flex-start; }
+    .auth-box { width: 100%; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="window-grid" id="windowGrid"></div>
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <span class="eyebrow">Hostel life, organized</span>
+      <h1 class="wordmark">Wingmate</h1>
+      <p class="tagline">Room allocation, fee payments, and warden approvals — all from one login.</p>
+      <div class="hero-footer">
+        <span>Block A</span>
+        <span>Block B</span>
+        <span>Block C</span>
+        <span>Block D</span>
+        <span class="push-right">Warden desk open 24/7</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="position: relative; overflow: hidden;">
+    <div class="starry-bg">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
+    <div class="card" style="position: relative; z-index: 10;">
+
+      <div class="brand-row">
+        <div class="brand-mark">W</div>
+        <div class="brand-name">Wingmate</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab-pill" id="tabPill"></div>
+        <button type="button" class="tab-btn active" data-tab="login">Log in</button>
+        <button type="button" class="tab-btn" data-tab="register">Register</button>
+      </div>
+
+      <!-- Login -->
+      <form id="loginForm" class="active" novalidate>
+        <div class="field">
+          <label for="loginEmail">Email Address</label>
+          <input id="loginEmail" type="email" placeholder="you@college.edu" required>
+        </div>
+        <div class="field password-field">
+          <label for="loginPass">Password</label>
+          <input id="loginPass" type="password" placeholder="••••••••" required minlength="8">
+          <button type="button" class="toggle-eye" data-target="loginPass" aria-label="Show password"></button>
+        </div>
+        <div class="row-between">
+          <label class="checkbox-label"><input type="checkbox"> Remember this device</label>
+          <a href="#" class="link">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn-primary"><span class="btn-label">Sign in</span></button>
+        <p class="switch-line">New to the hostel? <a href="#" class="link" data-switch="register">Register instead</a></p>
+      </form>
+
+      <!-- Register -->
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="regName">Full name</label>
+          <input id="regName" type="text" placeholder="e.g. Aryan Mhapralkar" required>
+        </div>
+        <div class="field">
+          <label for="regEmail">Email address</label>
+          <input id="regEmail" type="email" placeholder="you@example.com" required>
+        </div>
+        <input type="hidden" id="regRole" value="Admin">
+        <div class="field password-field">
+          <label for="regPass">Password</label>
+          <input id="regPass" type="password" placeholder="At least 8 characters" required minlength="8">
+          <button type="button" class="toggle-eye" data-target="regPass" aria-label="Show password"></button>
+        </div>
+        <div class="field password-field">
+          <label for="regConfirm">Confirm password</label>
+          <input id="regConfirm" type="password" placeholder="Re-enter password" required minlength="8">
+          <button type="button" class="toggle-eye" data-target="regConfirm" aria-label="Show password"></button>
+          <span class="field-error" id="regPassError">Passwords don't match</span>
+        </div>
+        <label class="checkbox-label"><input type="checkbox" required> I agree to the hostel code of conduct</label>
+        <button type="submit" class="btn-primary"><span class="btn-label">Create account</span></button>
+        <p class="switch-line">Already registered? <a href="#" class="link" data-switch="login">Log in instead</a></p>
+      </form>
+
+      <div class="helper-footer">Having trouble signing in? Contact the warden's desk at your block office.</div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---------- Animated window facade ----------
+  function buildWindowGrid(){
+    const grid = document.getElementById('windowGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    const cell = 32; // cell + gap, matches CSS
+    const cols = Math.ceil(grid.clientWidth / cell) + 1;
+    const rows = Math.ceil(grid.clientHeight / cell) + 1;
+    const total = Math.max(cols * rows, 60);
+
+    for(let i = 0; i < total; i++){
+      const w = document.createElement('div');
+      w.className = 'window';
+      if(Math.random() < 0.38){
+        w.classList.add('lit');
+        if(Math.random() < 0.15) w.classList.add('screen');
+        const dur = (4 + Math.random() * 5).toFixed(2);
+        const delay = (Math.random() * 6).toFixed(2);
+        w.style.animationDuration = dur + 's';
+        w.style.animationDelay = delay + 's';
+      }
+      grid.appendChild(w);
+    }
+  }
+
+  function debounce(fn, wait){
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  }
+
+  window.addEventListener('load', buildWindowGrid);
+  window.addEventListener('resize', debounce(buildWindowGrid, 250));
+
+  // ---------- Tab switching ----------
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const pill = document.getElementById('tabPill');
+  const forms = {
+    login: document.getElementById('loginForm'),
+    register: document.getElementById('registerForm')
+  };
+
+  function setTab(name){
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    Object.entries(forms).forEach(([k, f]) => f.classList.toggle('active', k === name));
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+    if(activeBtn){
+      pill.style.width = activeBtn.offsetWidth + 'px';
+      pill.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+    }
+  }
+
+  tabBtns.forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-switch]').forEach(a => {
+    a.addEventListener('click', (e) => { e.preventDefault(); setTab(a.dataset.switch); });
+  });
+  window.addEventListener('resize', debounce(() => {
+    const active = document.querySelector('.tab-btn.active');
+    if(active){
+      pill.style.width = active.offsetWidth + 'px';
+      pill.style.transform = `translateX(${active.offsetLeft}px)`;
+    }
+  }, 250));
+
+  setTab('login');
+
+  // ---------- Password show/hide ----------
+  const EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.4 21.4 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a21.4 21.4 0 0 1-3.22 4.36M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  document.querySelectorAll('.toggle-eye').forEach(btn => {
+    btn.innerHTML = EYE;
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.innerHTML = isPassword ? EYE_OFF : EYE;
+      btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+  });
+
+  // ---------- Toast ----------
+  function showToast(msg){
+    let toast = document.getElementById('toast');
+    if(!toast){
+      toast = document.createElement('div');
+      toast.id = 'toast';
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3400);
+  }
+
+  // ---------- Submit handling (Connected to Backend) ----------
+  async function handleSubmit(e, type) {
+    e.preventDefault();
+    const form = e.target;
+
+    if(!form.checkValidity()){
+      form.reportValidity();
+      return;
+    }
+
+    const btn = form.querySelector('.btn-primary');
+    const label = btn.querySelector('.btn-label');
+    const original = label.textContent;
+    btn.disabled = true;
+    label.textContent = type === 'login' ? 'Signing in…' : 'Creating account…';
+
+    try {
+      if (type === 'register') {
+        const name = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const pass = document.getElementById('regPass').value;
+        const confirm = document.getElementById('regConfirm').value;
+        const role = document.getElementById('regRole').value;
+        const errorEl = document.getElementById('regPassError');
+        
+        if (pass !== confirm) {
+          errorEl.style.display = 'block';
+          document.getElementById('regConfirm').focus();
+          btn.disabled = false;
+          label.textContent = original;
+          return;
+        }
+        errorEl.style.display = 'none';
+
+        // 1. Send Registration Data to Backend
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password: pass, role: role })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showToast('Account created successfully! Please log in.');
+          setTab('login'); // Switch UI to login tab
+          form.reset();    // Clear registration fields
+        } else {
+          showToast(data.error || 'Registration failed.');
+        }
+      }
+
+      if (type === 'login') {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPass').value;
+
+        // 2. Send Login Data to Backend
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // 3. Save the JWT Token
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.user.role);
+          
+          showToast('Login successful! Redirecting...');
+          
+          // 4. Redirect based on role
+          setTimeout(() => {
+            if (data.user.role === 'Student') {
+              window.location.href = 'dashboard.html';
+            } else {
+              window.location.href = 'admin-dashboard.html';
+            }
+          }, 1000);
+        } else {
+          showToast(data.error || 'Invalid credentials.');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Could not connect to the server. Is the backend running?');
+    } finally {
+      btn.disabled = false;
+      label.textContent = original;
+    }
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', e => handleSubmit(e, 'login'));
+  document.getElementById('registerForm').addEventListener('submit', e => handleSubmit(e, 'register'));
+</script>
+
+</body>
+</html>

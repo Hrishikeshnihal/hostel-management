@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.log
+.gemini/
+.agents/
+walkthrough.md
+implementation_plan.md
+task.md
+audit_report.md
+inspect_db.js
+add_phone_column.js
+local_agent.py
