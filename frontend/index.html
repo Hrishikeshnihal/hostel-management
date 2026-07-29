@@ -747,7 +747,15 @@
       body: JSON.stringify({ idToken, selectedRole })
     });
 
-    const data = await response.json();
+    // Safely parse response (may be non-JSON if Vercel returns an error page)
+    let data;
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Backend returned non-JSON:', text.substring(0, 200));
+      throw new Error('Server error. Please check that FIREBASE_SERVICE_ACCOUNT env var is set on Vercel.');
+    }
 
     if (!response.ok) {
       throw new Error(data.error || 'Backend authentication failed');
