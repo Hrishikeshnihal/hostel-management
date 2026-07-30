@@ -443,6 +443,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     fetchNotices();
+
+    // Fetch and Display Hostel Owner Contact Details
+    async function fetchOwnerInfo() {
+        try {
+            const res = await fetch('/student/owner-info', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data && data.owner_name) {
+                const card = document.getElementById('ownerContactCard');
+                const hostelName = document.getElementById('ownerHostelName');
+                const ownerName = document.getElementById('ownerName');
+                const phoneBtn = document.getElementById('ownerPhoneBtn');
+                const emailBtn = document.getElementById('ownerEmailBtn');
+                
+                if (card) card.style.display = 'block';
+                if (hostelName) hostelName.textContent = data.hostel_name || "Wingmate Hostel";
+                if (ownerName) ownerName.textContent = data.owner_name;
+                if (phoneBtn) {
+                    phoneBtn.href = `tel:${data.owner_phone}`;
+                    phoneBtn.textContent = `📞 Call Owner (${data.owner_phone})`;
+                }
+                if (emailBtn) {
+                    emailBtn.href = `mailto:${data.owner_email}`;
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching owner details:", error);
+        }
+    }
+    fetchOwnerInfo();
 });
 
 // Handle Password Update Form Submission

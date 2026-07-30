@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 const authenticateToken = require('./middleware/auth');
 const authorizeRoles = require('./middleware/roleAuth');
 let firebaseAuth = null;
@@ -45,6 +46,40 @@ const pool = new Pool({
 pool.on('error', (err) => {
     console.error('Unexpected database pool error:', err.message);
 });
+
+// Helper: Send Email Notification & Log to Notifications Table
+async function sendEmailNotification(to, subject, htmlContent, ownerId = null, type = 'general') {
+    try {
+        if (!to) return;
+        await pool.query(
+            `INSERT INTO notifications (recipient_email, subject, message, type, owner_id) VALUES ($1, $2, $3, $4, $5)`,
+            [to, subject, htmlContent, type, ownerId]
+        );
+
+        if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: parseInt(process.env.SMTP_PORT || '587'),
+                secure: process.env.SMTP_SECURE === 'true',
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS
+                }
+            });
+            await transporter.sendMail({
+                from: `"Wingmate Hostel" <${process.env.SMTP_USER}>`,
+                to,
+                subject,
+                html: htmlContent
+            });
+            console.log(`[EMAIL DISPATCHED] To: ${to} | Subject: ${subject}`);
+        } else {
+            console.log(`[SIMULATED EMAIL DISPATCH] To: ${to} | Subject: ${subject}`);
+        }
+    } catch (err) {
+        console.error(`[EMAIL ERROR] Failed to send to ${to}:`, err.message);
+    }
+}
 
 // Debug endpoint to verify Firebase Admin initialization (always available)
 app.get('/debug/firebase', (req, res) => {
@@ -174,7 +209,7 @@ app.post('/auth/firebase', async (req, res) => {
             return res.status(500).json({ error: 'Firebase Admin SDK not available: ' + (firebaseInitError || 'unknown') });
         }
 
-        const { idToken, selectedRole, hostelName } = req.body || {};
+        const { idToken, selectedRole, hostelName, phone } = req.body || {};
 
         if (!idToken) {
             return res.status(400).json({ error: 'Firebase ID token is required' });
@@ -207,8 +242,8 @@ app.post('/auth/firebase', async (req, res) => {
             let ownerId = null;
 
             const newUser = await pool.query(
-                'INSERT INTO users (full_name, email, password_hash, role, owner_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-                [firebaseName, firebaseEmail, placeholderHash, dbRole, ownerId]
+                'INSERT INTO users (full_name, email, password_hash, role, owner_id, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                [firebaseName, firebaseEmail, placeholderHash, dbRole, ownerId, phone || null]
             );
             user = newUser.rows[0];
 
@@ -227,6 +262,14 @@ app.post('/auth/firebase', async (req, res) => {
             }
         }
 
+        // Update phone number if provided during login/register
+        if (phone && phone.trim() !== '' && (!user.phone || user.phone !== phone)) {
+            await pool.query('UPDATE users SET phone = $1 WHERE id = $2', [phone.trim(), user.id]);
+            user.phone = phone.trim();
+        }
+
+        const requiresPhone = (user.role === 'Student' && (!user.phone || user.phone.trim() === ''));
+
         // 3. Issue our own JWT (same shape as the existing /login route)
         const token = jwt.sign(
             { id: user.id, role: user.role, owner_id: user.owner_id || user.id },
@@ -238,7 +281,8 @@ app.post('/auth/firebase', async (req, res) => {
         res.status(200).json({
             message: 'Authenticated successfully!',
             token: token,
-            user: { id: user.id, name: user.full_name, role: user.role }
+            requiresPhone: requiresPhone,
+            user: { id: user.id, name: user.full_name, role: user.role, phone: user.phone }
         });
 
     } catch (err) {
@@ -247,6 +291,21 @@ app.post('/auth/firebase', async (req, res) => {
             return res.status(400).json({ error: 'A user with this email already exists' });
         }
         res.status(401).json({ error: 'Firebase authentication failed: ' + err.message });
+    }
+});
+
+// Endpoint to update phone number (for Google Sign-In or profile setup)
+app.post('/auth/update-phone', authenticateToken, async (req, res) => {
+    try {
+        const { phone } = req.body || {};
+        if (!phone || !phone.trim()) {
+            return res.status(400).json({ error: 'Phone number is required' });
+        }
+        await pool.query('UPDATE users SET phone = $1 WHERE id = $2', [phone.trim(), req.user.id]);
+        res.status(200).json({ message: 'Phone number updated successfully' });
+    } catch (err) {
+        console.error('Error updating phone:', err.message);
+        res.status(500).json({ error: 'Failed to update phone number' });
     }
 });
 
@@ -628,25 +687,33 @@ app.put('/admin/complaints/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// GET: Admin views all current room allocations
+// GET: Admin views all current room allocations with detailed student info
 app.get('/admin/allocations', authenticateToken, async (req, res) => {
     try {
-        // Ensure only Admins/Accountants can view this
-        if (req.user.role === 'Student') {
+        if (req.user.role === 'Student' || req.user.role.toLowerCase() === 'student') {
             return res.status(403).json({ error: 'Access denied.' });
         }
 
+        const ownerId = req.user.owner_id || req.user.id;
         const allocations = await pool.query(
-`SELECT 
+            `SELECT 
+                u.id as student_id,
                 u.full_name as student_name, 
+                u.email as student_email,
+                u.phone as student_phone,
                 r.room_number, 
+                r.price_per_month as total_room_price,
+                r.capacity as room_capacity,
+                ROUND(r.price_per_month / GREATEST(r.capacity, 1)) as calculated_rent,
                 'Main' as block, 
                 TO_CHAR(a.assigned_at, 'DD Mon YYYY') as move_in_date
              FROM allocations a
              JOIN users u ON a.student_id = u.id
              JOIN rooms r ON a.room_id = r.id
              WHERE r.owner_id = $1
-             ORDER BY r.room_number`, [req.user.id]);
+             ORDER BY r.room_number, u.full_name`,
+            [ownerId]
+        );
 
         res.json(allocations.rows);
     } catch (err) {
@@ -661,7 +728,7 @@ app.post('/admin/allocate', authenticateToken, async (req, res) => {
         return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { student_id, room_number } = req.body; // room_number comes from frontend payload
+    const { student_id, room_number } = req.body;
 
     try {
         // 1. Check if the student is already allocated a room
@@ -674,12 +741,23 @@ app.post('/admin/allocate', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Student is already assigned to a room' });
         }
         
-        // 1.5 Get the actual room's database ID from the room number
-        const roomResult = await pool.query("SELECT id, owner_id FROM rooms WHERE room_number = $1 AND owner_id = $2", [room_number, req.user.id]);
+        const ownerId = req.user.owner_id || req.user.id;
+
+        // 1.5 Get room details
+        const roomResult = await pool.query(
+            "SELECT id, price_per_month, capacity FROM rooms WHERE room_number = $1 AND owner_id = $2", 
+            [room_number, ownerId]
+        );
         if (roomResult.rows.length === 0) {
             return res.status(404).json({ error: "Room number not found." });
         }
-        const actualRoomId = roomResult.rows[0].id;
+        const roomData = roomResult.rows[0];
+        const actualRoomId = roomData.id;
+        const totalRoomPrice = parseInt(roomData.price_per_month) || 5000;
+        const capacity = Math.max(parseInt(roomData.capacity) || 1, 1);
+
+        // Auto-calculate rent divided by room capacity
+        const rentPerBed = Math.round(totalRoomPrice / capacity);
 
         // 2. Create the allocation in allocations table
         const newAllocation = await pool.query(
@@ -688,16 +766,44 @@ app.post('/admin/allocate', authenticateToken, async (req, res) => {
              RETURNING *`,
             [student_id, actualRoomId]
         );
-        
-        const ownerId = req.user.owner_id || req.user.id;
 
         // 3. Update the user's room assignment & owner_id
         await pool.query("UPDATE users SET room_number = $1, owner_id = $2 WHERE id = $3", [room_number, ownerId, student_id]);
         
         // 4. Update the room status to occupied
         await pool.query("UPDATE rooms SET status = 'Occupied' WHERE room_number = $1 AND owner_id = $2", [room_number, ownerId]);
+
+        // 5. Auto-issue rent payment for student
+        await pool.query(
+            `INSERT INTO payments (student_id, amount, status, due_date, owner_id)
+             VALUES ($1, $2, 'Pending', NOW() + INTERVAL '30 days', $3)`,
+            [student_id, rentPerBed, ownerId]
+        );
+
+        // 6. Push Email Notification to Student
+        const studentRes = await pool.query('SELECT full_name, email FROM users WHERE id = $1', [student_id]);
+        if (studentRes.rows.length > 0) {
+            const st = studentRes.rows[0];
+            sendEmailNotification(
+                st.email,
+                `Room Allocation & Rent Payment Issued - Room ${room_number}`,
+                `<div style="font-family: sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; border-radius: 10px;">
+                    <h2 style="color: #6366f1;">Room Allocated Successfully</h2>
+                    <p>Dear <strong>${st.full_name}</strong>,</p>
+                    <p>You have been assigned to <strong>Room ${room_number}</strong>.</p>
+                    <div style="background: #1e293b; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                        <p style="margin: 4px 0;"><strong>Total Room Price:</strong> ₹${totalRoomPrice}/month</p>
+                        <p style="margin: 4px 0;"><strong>Room Capacity:</strong> ${capacity} Resident(s)</p>
+                        <p style="margin: 4px 0; font-size: 1.1rem; color: #10b981;"><strong>Your Rent Share (Per Bed):</strong> ₹${rentPerBed}/month</p>
+                    </div>
+                    <p>A pending payment of <strong>₹${rentPerBed}</strong> has been auto-issued to your student dashboard.</p>
+                </div>`,
+                ownerId,
+                'rent_due'
+            );
+        }
         
-        res.status(201).json({ message: 'Room allocated successfully', allocation: newAllocation.rows[0] });
+        res.status(201).json({ message: 'Room allocated successfully & rent payment issued', allocation: newAllocation.rows[0], rent_per_bed: rentPerBed });
     } catch (err) {
         console.error("ALLOCATION ERROR:", err.message);
         res.status(500).json({ error: err.message });
@@ -920,6 +1026,62 @@ app.get('/notices', authenticateToken, async (req, res) => {
     }
 });
 
+// GET: Student views their Hostel Owner's contact info & hostel name
+app.get('/student/owner-info', authenticateToken, async (req, res) => {
+    try {
+        let ownerId = req.user.owner_id;
+
+        if (!ownerId) {
+            const allocRes = await pool.query(
+                `SELECT r.owner_id FROM allocations a 
+                 JOIN rooms r ON a.room_id = r.id 
+                 WHERE a.student_id = $1 
+                 ORDER BY a.assigned_at DESC LIMIT 1`,
+                [req.user.id]
+            );
+            if (allocRes.rows.length > 0) ownerId = allocRes.rows[0].owner_id;
+        }
+
+        if (!ownerId) {
+            const uRes = await pool.query('SELECT owner_id FROM users WHERE id = $1', [req.user.id]);
+            if (uRes.rows.length > 0) ownerId = uRes.rows[0].owner_id;
+        }
+
+        if (!ownerId) {
+            return res.json({ owner: null });
+        }
+
+        const ownerQuery = await pool.query(
+            `SELECT id, full_name as owner_name, email as owner_email, phone as owner_phone FROM users WHERE id = $1`,
+            [ownerId]
+        );
+        
+        const settingQuery = await pool.query(
+            `SELECT setting_value FROM hostel_settings WHERE owner_id = $1 AND setting_key = 'hostel_name'`,
+            [ownerId]
+        );
+
+        const hostelName = (settingQuery.rows.length > 0 && settingQuery.rows[0].setting_value) 
+            ? settingQuery.rows[0].setting_value 
+            : "Wingmate Hostel";
+
+        if (ownerQuery.rows.length === 0) {
+            return res.json({ owner: null });
+        }
+
+        const ownerData = ownerQuery.rows[0];
+        res.json({
+            hostel_name: hostelName,
+            owner_name: ownerData.owner_name,
+            owner_email: ownerData.owner_email,
+            owner_phone: ownerData.owner_phone || "Not specified"
+        });
+    } catch (err) {
+        console.error("Error fetching owner info:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // POST: Admin creates a new notice
 app.post('/admin/notices', authenticateToken, async (req, res) => {
     if (req.user.role && req.user.role.toLowerCase() === 'student') {
@@ -936,7 +1098,29 @@ app.post('/admin/notices', authenticateToken, async (req, res) => {
              RETURNING *`,
             [title, content, ownerId]
         );
-        res.status(201).json({ message: 'Notice posted', notice: newNotice.rows[0] });
+
+        // Async email notification to all students belonging to this owner
+        pool.query(`SELECT email, full_name FROM users WHERE owner_id = $1 AND LOWER(role) = 'student'`, [ownerId])
+            .then(res => {
+                res.rows.forEach(st => {
+                    sendEmailNotification(
+                        st.email,
+                        `Announcement: ${title}`,
+                        `<div style="font-family: sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; border-radius: 10px;">
+                            <h2 style="color: #6366f1;">Hostel Announcement</h2>
+                            <p>Dear <strong>${st.full_name}</strong>,</p>
+                            <h3 style="color: #38bdf8;">${title}</h3>
+                            <p style="line-height: 1.6;">${content}</p>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">Posted by Hostel Management via Wingmate</p>
+                        </div>`,
+                        ownerId,
+                        'notice'
+                    );
+                });
+            })
+            .catch(e => console.error("Notice email query error:", e));
+
+        res.status(201).json({ message: 'Notice posted & notifications sent', notice: newNotice.rows[0] });
     } catch (err) {
         console.error("Error posting notice:", err.message);
         res.status(500).json({ error: 'Server error' });

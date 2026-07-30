@@ -160,14 +160,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (res.ok && data.length > 0) {
                 tbody.innerHTML = data.map(a => `
                     <tr>
-                        <td>${a.student_name}</td>
+                        <td class="mono-num">${a.student_id}</td>
+                        <td style="font-weight: 500;">${a.student_name}</td>
+                        <td>
+                            <a href="tel:${a.student_phone || ''}" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+                                📞 ${a.student_phone || 'N/A'}
+                            </a>
+                        </td>
+                        <td style="color: var(--text-muted);">${a.student_email}</td>
                         <td><span class="mono-num">${a.room_number}</span></td>
-                        <td>${a.block}</td>
+                        <td><span style="color: #34d399; font-weight: 600;">₹${a.calculated_rent || 'N/A'}</span></td>
                         <td>${a.move_in_date}</td>
                     </tr>
                 `).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No rooms allocated yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No rooms allocated yet.</td></tr>`;
             }
         } catch (error) {
             console.error("Allocations fetch error:", error);

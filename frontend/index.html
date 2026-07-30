@@ -689,6 +689,10 @@
           <label for="regHostelName">Hostel Name</label>
           <input id="regHostelName" type="text" placeholder="e.g. Wingmate Cyber Hostel">
         </div>
+        <div class="field" id="studentPhoneField">
+          <label for="regPhone">Mobile Phone Number</label>
+          <input id="regPhone" type="tel" placeholder="e.g. +91 98765 43210" required>
+        </div>
         <div class="field">
           <label for="regEmail">Email address</label>
           <input id="regEmail" type="email" placeholder="you@example.com" required>
@@ -766,12 +770,14 @@
     const idToken = await firebaseUser.getIdToken();
     const selectedRole = getSelectedRole();
     const hostelNameInput = document.getElementById('regHostelName');
+    const phoneInput = document.getElementById('regPhone');
     const hostelName = (hostelNameInput && selectedRole === 'hostel-owner') ? hostelNameInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
 
     const response = await fetch('/auth/firebase', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, selectedRole, hostelName })
+      body: JSON.stringify({ idToken, selectedRole, hostelName, phone })
     });
 
     // Safely parse response (may be non-JSON if Vercel returns an error page)
@@ -791,12 +797,35 @@
     return data;
   }
 
+  // ===== Helper: Prompt for Phone if missing (Google Sign-In) =====
+  async function promptForPhoneIfNeeded(token) {
+    return new Promise((resolve) => {
+      const phone = prompt("Please enter your Mobile Phone Number to complete student setup:");
+      if (phone && phone.trim() !== "") {
+        fetch('/auth/update-phone', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ phone: phone.trim() })
+        }).then(() => resolve()).catch(() => resolve());
+      } else {
+        resolve();
+      }
+    });
+  }
+
   // ===== Helper: Store token & redirect =====
-  function handleAuthSuccess(data) {
+  async function handleAuthSuccess(data) {
     // Store token (compatible with both dashboard scripts)
     localStorage.setItem('token', data.token);
     localStorage.setItem('adminToken', data.token);
     localStorage.setItem('role', data.user.role);
+
+    if (data.requiresPhone) {
+      await promptForPhoneIfNeeded(data.token);
+    }
 
     showToast('Login successful! Redirecting...');
 
