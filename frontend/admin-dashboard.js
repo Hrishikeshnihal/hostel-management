@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     window.deallocateStudent = async (studentId) => {
-        if (!confirm("Are you sure you want to remove this student and delete all their allocations, payments, and tickets?")) return;
+        if (!(await showConfirmModal("Are you sure you want to remove this student and delete all their allocations, payments, and tickets?"))) return;
         try {
             const res = await fetch(`/admin/allocate/${studentId}`, {
                 method: 'DELETE',
@@ -197,7 +197,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (res.ok) {
                 showToast(data.message || "Student removed successfully.");
                 fetchAllocations();
-                if (typeof fetchRooms === 'function') fetchRooms(); // Refresh rooms list
+                fetchAdminRooms();
+                fetchAdminStats();
+                fetchUnpaidDues();
+                fetchAllPayments();
             } else {
                 showToast(data.error || "Failed to remove student.");
             }
@@ -345,6 +348,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                         msgElement.style.display = 'block';
                     }
                     fetchAllocations();
+                    fetchAdminRooms();
+                    fetchAdminStats();
+                    fetchUnpaidDues();
+                    fetchAllPayments();
                 } else {
                     if (msgElement) {
                         msgElement.textContent = data.error || 'Failed to allocate room.';
