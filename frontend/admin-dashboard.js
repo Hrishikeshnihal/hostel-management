@@ -171,15 +171,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <td><span class="mono-num">${a.room_number}</span></td>
                         <td><span style="color: #34d399; font-weight: 600;">₹${a.calculated_rent || 'N/A'}</span></td>
                         <td>${a.move_in_date}</td>
+                        <td>
+                            <button onclick="deallocateStudent(${a.student_id})" class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Remove
+                            </button>
+                        </td>
                     </tr>
                 `).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No rooms allocated yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No rooms allocated yet.</td></tr>`;
             }
         } catch (error) {
             console.error("Allocations fetch error:", error);
         }
     }
+
+    window.deallocateStudent = async (studentId) => {
+        if (!confirm("Are you sure you want to remove this student and delete all their allocations, payments, and tickets?")) return;
+        try {
+            const res = await fetch(`/admin/allocate/${studentId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message || "Student removed successfully.");
+                fetchAllocations();
+                if (typeof fetchRooms === 'function') fetchRooms(); // Refresh rooms list
+            } else {
+                showToast(data.error || "Failed to remove student.");
+            }
+        } catch (error) {
+            console.error("Error deallocating student:", error);
+            showToast("Server error during student removal.");
+        }
+    };
 
     fetchAllocations();
 
