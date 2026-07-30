@@ -818,6 +818,11 @@ app.delete('/admin/allocate/:student_id', authenticateToken, async (req, res) =>
 
     const { student_id } = req.params;
     const ownerId = req.user.owner_id || req.user.id;
+    const studentIdInt = parseInt(student_id);
+
+    if (isNaN(studentIdInt)) {
+        return res.status(400).json({ error: "Invalid Student ID format." });
+    }
 
     try {
         // 1. Get the room allocated to this student before removing
@@ -826,7 +831,7 @@ app.delete('/admin/allocate/:student_id', authenticateToken, async (req, res) =>
              FROM allocations a 
              JOIN rooms r ON a.room_id = r.id 
              WHERE a.student_id = $1 AND r.owner_id = $2`,
-            [student_id, ownerId]
+            [studentIdInt, ownerId]
         );
 
         if (allocRes.rows.length === 0) {
@@ -835,16 +840,19 @@ app.delete('/admin/allocate/:student_id', authenticateToken, async (req, res) =>
 
         const { room_id, room_number } = allocRes.rows[0];
 
+        // Begin transaction
+        await pool.query("BEGIN");
+
         // 2. Delete allocations
-        await pool.query("DELETE FROM allocations WHERE student_id = $1", [student_id]);
+        await pool.query("DELETE FROM allocations WHERE student_id = $1", [studentIdInt]);
 
         // 3. Clear room_number and owner_id on users table
-        await pool.query("UPDATE users SET room_number = NULL, owner_id = NULL WHERE id = $1", [student_id]);
+        await pool.query("UPDATE users SET room_number = NULL, owner_id = NULL WHERE id = $1", [studentIdInt]);
 
         // 4. Delete payments, complaints, leave requests for this student
-        await pool.query("DELETE FROM payments WHERE student_id = $1 AND owner_id = $2", [student_id, ownerId]);
-        await pool.query("DELETE FROM complaints WHERE student_id = $1", [student_id]);
-        await pool.query("DELETE FROM leave_requests WHERE student_id = $1", [student_id]);
+        await pool.query("DELETE FROM payments WHERE student_id = $1 AND (owner_id = $2 OR owner_id IS NULL)", [studentIdInt, ownerId]);
+        await pool.query("DELETE FROM complaints WHERE student_id = $1", [studentIdInt]);
+        await pool.query("DELETE FROM leave_requests WHERE student_id = $1", [studentIdInt]);
 
         // 5. Update room status to 'Available' if no other students are allocated to it
         const otherAlloc = await pool.query("SELECT id FROM allocations WHERE room_id = $1", [room_id]);
@@ -852,10 +860,14 @@ app.delete('/admin/allocate/:student_id', authenticateToken, async (req, res) =>
             await pool.query("UPDATE rooms SET status = 'Available' WHERE id = $1", [room_id]);
         }
 
+        // Commit transaction
+        await pool.query("COMMIT");
+
         res.json({ message: "Student de-allocated and all related records deleted successfully." });
     } catch (err) {
+        await pool.query("ROLLBACK");
         console.error("Error removing student allocation:", err.message);
-        res.status(500).json({ error: "Server error during removal." });
+        res.status(500).json({ error: "Database transaction failed: " + err.message });
     }
 });
 
