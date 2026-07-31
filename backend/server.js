@@ -498,6 +498,46 @@ app.post('/complaints', authenticateToken, async (req, res) => {
             );
         });
 
+        // Async Email Notification to Hostel Owner
+        const studentRes = await pool.query(`SELECT full_name, owner_id FROM users WHERE id = $1`, [req.user.id]);
+        if (studentRes.rows.length > 0) {
+            const student = studentRes.rows[0];
+            let ownerId = student.owner_id;
+
+            if (!ownerId) {
+                const allocRes = await pool.query(
+                    `SELECT r.owner_id FROM allocations a 
+                     JOIN rooms r ON a.room_id = r.id 
+                     WHERE a.student_id = $1 
+                     ORDER BY a.assigned_at DESC LIMIT 1`,
+                    [req.user.id]
+                );
+                if (allocRes.rows.length > 0) ownerId = allocRes.rows[0].owner_id;
+            }
+
+            if (ownerId) {
+                const ownerRes = await pool.query(`SELECT email, full_name FROM users WHERE id = $1`, [ownerId]);
+                if (ownerRes.rows.length > 0) {
+                    const owner = ownerRes.rows[0];
+                    sendEmailNotification(
+                        owner.email,
+                        `New Maintenance Ticket Raised: #${newTicket.rows[0].id}`,
+                        `<div style="font-family: sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; border-radius: 10px;">
+                            <h2 style="color: #6366f1;">New Ticket Raised</h2>
+                            <p>Dear <strong>${owner.full_name}</strong>,</p>
+                            <p>A new support ticket has been raised by student <strong>${student.full_name}</strong> (ID: ${req.user.id}).</p>
+                            <hr style="border: 0; border-top: 1px solid #334155; margin: 16px 0;" />
+                            <p><strong>Category:</strong> ${ticketCategory}</p>
+                            <p><strong>Description:</strong> ${ticketDesc}</p>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">Manage tickets from your dashboard.</p>
+                        </div>`,
+                        ownerId,
+                        'complaint'
+                    );
+                }
+            }
+        }
+
         res.status(201).json({ message: 'Ticket submitted', ticket: newTicket.rows[0] });
     } catch (err) {
         console.error("Error submitting ticket:", err.message);
@@ -1372,5 +1412,46 @@ app.listen(PORT, '0.0.0.0', () => {
         }
     }
 });
+
+// Background Worker: Daily Overdue Payments Checker
+async function checkOverduePayments() {
+    try {
+        console.log("[Worker] Checking for overdue payments...");
+        // Select unpaid payments past their due date
+        const overduePayments = await pool.query(
+            `SELECT p.id, p.amount, p.due_date, p.fee_type, p.owner_id,
+                    u.email, u.full_name, u.id as student_id
+             FROM payments p
+             JOIN users u ON p.student_id = u.id
+             WHERE p.status != 'Paid' AND p.due_date < CURRENT_DATE`
+        );
+
+        console.log(`[Worker] Found ${overduePayments.rows.length} overdue payments.`);
+
+        for (const payment of overduePayments.rows) {
+            const subject = `Overdue Payment Notice: ${payment.fee_type || 'Rent'}`;
+            const htmlContent = `
+                <div style="font-family: sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; border-radius: 10px;">
+                    <h2 style="color: #ef4444;">Overdue Payment Alert</h2>
+                    <p>Dear <strong>${payment.full_name}</strong>,</p>
+                    <p>This is an automated notification that your payment for <strong>${payment.fee_type || 'Rent'}</strong> is overdue.</p>
+                    <div style="padding: 12px; background: #1e293b; border-radius: 6px; margin: 16px 0;">
+                        <p style="margin: 4px 0;"><strong>Amount Due:</strong> ₹${payment.amount}</p>
+                        <p style="margin: 4px 0;"><strong>Due Date:</strong> ${payment.due_date}</p>
+                    </div>
+                    <p>Please log in to your student dashboard and clear this dues as soon as possible to avoid any potential penalties.</p>
+                    <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">Wingmate Hostel Management System</p>
+                </div>
+            `;
+            sendEmailNotification(payment.email, subject, htmlContent, payment.owner_id, 'overdue_payment');
+        }
+    } catch (err) {
+        console.error("[Worker] Error in checkOverduePayments:", err.message);
+    }
+}
+
+// Run checker once 10 seconds after startup, then every 24 hours
+setTimeout(checkOverduePayments, 10000);
+setInterval(checkOverduePayments, 24 * 60 * 60 * 1000);
 
 module.exports = app;
