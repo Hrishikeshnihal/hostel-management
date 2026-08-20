@@ -1,16 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/student.dart';
 import '../models/attendance.dart';
 
 class DatabaseHelper {
   static bool useFirebase = false;
-  
+
   static final List<Student> _localStudents = [];
   static final List<Attendance> _localAttendance = [];
 
-  static final StreamController<List<Student>> _studentsController = 
+  static final StreamController<List<Student>> _studentsController =
       StreamController<List<Student>>.broadcast();
   static final List<LocalStreamListener> _localListeners = [];
 
@@ -25,9 +28,67 @@ class DatabaseHelper {
       debugPrint("DatabaseHelper: Firebase Cloud Firestore initialized successfully.");
     } catch (e) {
       useFirebase = false;
-      debugPrint("DatabaseHelper: Firebase missing or init failed: $e. Using local in-memory fallback.");
-      // Inject some mock students on startup for quick testing!
-      _injectMockData();
+      debugPrint("DatabaseHelper: Firebase missing or init failed: $e. Operating in Local persistent filesystem mode.");
+      // Load local disk database files
+      await _loadLocalData();
+    }
+  }
+
+  // ===== LOCAL PERSISTENCE FILESYSTEM =====
+
+  static Future<File> _getStudentsFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/students.json');
+  }
+
+  static Future<File> _getAttendanceFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/attendance.json');
+  }
+
+  static Future<void> _loadLocalData() async {
+    try {
+      final studentsFile = await _getStudentsFile();
+      if (await studentsFile.exists()) {
+        final content = await studentsFile.readAsString();
+        final List<dynamic> jsonList = json.decode(content);
+        _localStudents.clear();
+        _localStudents.addAll(jsonList.map((m) => Student.fromMap(m)).toList());
+      } else {
+        // Fallback preloads for test warden experience
+        _injectMockData();
+        await _saveLocalStudents();
+      }
+
+      final attendanceFile = await _getAttendanceFile();
+      if (await attendanceFile.exists()) {
+        final content = await attendanceFile.readAsString();
+        final List<dynamic> jsonList = json.decode(content);
+        _localAttendance.clear();
+        _localAttendance.addAll(jsonList.map((m) => Attendance.fromMap(m)).toList());
+      }
+    } catch (e) {
+      debugPrint("DatabaseHelper: Error loading local persistent data: $e");
+    }
+  }
+
+  static Future<void> _saveLocalStudents() async {
+    try {
+      final file = await _getStudentsFile();
+      final list = _localStudents.map((s) => s.toMap()).toList();
+      await file.writeAsString(json.encode(list));
+    } catch (e) {
+      debugPrint("DatabaseHelper: Error writing local students: $e");
+    }
+  }
+
+  static Future<void> _saveLocalAttendance() async {
+    try {
+      final file = await _getAttendanceFile();
+      final list = _localAttendance.map((a) => a.toMap()).toList();
+      await file.writeAsString(json.encode(list));
+    } catch (e) {
+      debugPrint("DatabaseHelper: Error writing local attendance: $e");
     }
   }
 
@@ -83,6 +144,7 @@ class DatabaseHelper {
       await FirebaseFirestore.instance.collection('students').doc(student.id).set(student.toMap());
     } else {
       _localStudents.add(student);
+      await _saveLocalStudents();
       _studentsController.add(List.from(_localStudents));
     }
   }
@@ -94,6 +156,7 @@ class DatabaseHelper {
       final index = _localStudents.indexWhere((s) => s.id == student.id);
       if (index != -1) {
         _localStudents[index] = student;
+        await _saveLocalStudents();
         _studentsController.add(List.from(_localStudents));
       }
     }
@@ -116,6 +179,8 @@ class DatabaseHelper {
     } else {
       _localStudents.removeWhere((s) => s.id == studentId);
       _localAttendance.removeWhere((a) => a.studentId == studentId);
+      await _saveLocalStudents();
+      await _saveLocalAttendance();
       _studentsController.add(List.from(_localStudents));
       for (var listener in _localListeners) {
         final filtered = _localAttendance.where((a) => a.dateKey == listener.dateKey).toList();
@@ -184,6 +249,7 @@ class DatabaseHelper {
           _localAttendance.add(record);
         }
       }
+      await _saveLocalAttendance();
       for (var listener in _localListeners) {
         final filtered = _localAttendance.where((a) => a.dateKey == listener.dateKey).toList();
         listener.onUpdate(filtered);
