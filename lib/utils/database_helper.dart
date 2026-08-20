@@ -12,8 +12,7 @@ class DatabaseHelper {
 
   static final StreamController<List<Student>> _studentsController = 
       StreamController<List<Student>>.broadcast();
-  static final StreamController<List<Attendance>> _attendanceController = 
-      StreamController<List<Attendance>>.broadcast();
+  static final List<LocalStreamListener> _localListeners = [];
 
   static Future<void> initialize() async {
     try {
@@ -118,7 +117,10 @@ class DatabaseHelper {
       _localStudents.removeWhere((s) => s.id == studentId);
       _localAttendance.removeWhere((a) => a.studentId == studentId);
       _studentsController.add(List.from(_localStudents));
-      _attendanceController.add(List.from(_localAttendance));
+      for (var listener in _localListeners) {
+        final filtered = _localAttendance.where((a) => a.dateKey == listener.dateKey).toList();
+        listener.onUpdate(filtered);
+      }
     }
   }
 
@@ -129,23 +131,39 @@ class DatabaseHelper {
   }
 
   static Stream<List<Attendance>> streamAttendanceForDate(DateTime date) {
+    final dateKey = formatDateKey(date);
     if (useFirebase) {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
       return FirebaseFirestore.instance
           .collection('attendance')
-          .where('date', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-          .where('date', isLessThanOrEqualTo: endOfDay.toIso8601String())
+          .where('dateKey', isEqualTo: dateKey)
           .snapshots()
           .map((snapshot) {
         return snapshot.docs.map((doc) => Attendance.fromMap(doc.data())).toList();
       });
     } else {
-      final dateKey = formatDateKey(date);
-      final filtered = _localAttendance.where((a) => formatDateKey(a.date) == dateKey).toList();
-      Timer.run(() => _attendanceController.add(filtered));
-      return _attendanceController.stream;
+      late StreamController<List<Attendance>> controller;
+      final listener = LocalStreamListener(
+        dateKey: dateKey,
+        onUpdate: (data) {
+          if (!controller.isClosed) {
+            controller.add(data);
+          }
+        },
+      );
+
+      controller = StreamController<List<Attendance>>(
+        onListen: () {
+          _localListeners.add(listener);
+          final filtered = _localAttendance.where((a) => a.dateKey == dateKey).toList();
+          controller.add(filtered);
+        },
+        onCancel: () {
+          _localListeners.remove(listener);
+          controller.close();
+        },
+      );
+
+      return controller.stream;
     }
   }
 
@@ -166,7 +184,10 @@ class DatabaseHelper {
           _localAttendance.add(record);
         }
       }
-      _attendanceController.add(List.from(_localAttendance));
+      for (var listener in _localListeners) {
+        final filtered = _localAttendance.where((a) => a.dateKey == listener.dateKey).toList();
+        listener.onUpdate(filtered);
+      }
     }
   }
 
@@ -190,4 +211,11 @@ class DatabaseHelper {
       return controller.stream;
     }
   }
+}
+
+class LocalStreamListener {
+  final String dateKey;
+  final void Function(List<Attendance>) onUpdate;
+
+  LocalStreamListener({required this.dateKey, required this.onUpdate});
 }

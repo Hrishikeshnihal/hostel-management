@@ -174,7 +174,8 @@ class _DashboardTab extends StatelessWidget {
                       studentId: student.id,
                       studentName: student.name,
                       roomNumber: student.roomNumber,
-                      date: DateTime.now(),
+                      date: provider.selectedDate,
+                      dateKey: '',
                       status: 'Unmarked',
                     ),
                   );

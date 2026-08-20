@@ -65,7 +65,7 @@ void main() {
   float pVal = clamp(uProgress, 0.0, 1.0);
   float env = sin(pVal * PI);
 
-  vec2 uv = flutter_FragCoord().xy / uResolution;
+  vec2 uv = FlutterFragCoord().xy / uResolution;
 
   // Add subtle drift/breathing
   uv += vec2(sin(uTime * 0.25 + uv.y * 4.0), cos(uTime * 0.22 + uv.x * 4.0)) * uDrift * 0.008;

@@ -89,6 +89,7 @@ class HostelProvider extends ChangeNotifier {
       studentName: student.name,
       roomNumber: student.roomNumber,
       date: _selectedDate,
+      dateKey: dateKey,
       status: status,
     );
 
@@ -107,6 +108,7 @@ class HostelProvider extends ChangeNotifier {
         studentName: student.name,
         roomNumber: student.roomNumber,
         date: _selectedDate,
+        dateKey: dateKey,
         status: 'Present',
       );
     }).toList();

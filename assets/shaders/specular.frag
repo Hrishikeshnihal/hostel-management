@@ -32,7 +32,7 @@ float gaussianLine(float d, float sigma) {
 }
 
 void main() {
-  vec2 p = flutter_FragCoord().xy - uCenter;
+  vec2 p = FlutterFragCoord().xy - uCenter;
   
   // Flutter coordinate space is y-down; invert y to match WebGL angle calculations
   p.y = -p.y;
